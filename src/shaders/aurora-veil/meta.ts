@@ -1,0 +1,71 @@
+import type { ShaderMeta } from "../schema";
+
+export const meta: ShaderMeta = {
+  id: "aurora-veil",
+  name: "Aurora Veil",
+  description:
+    "Three curtains of light sway over a night sky, each breaking into fine vertical rays.",
+  category: "aurora",
+  tags: ["aurora", "night", "glow", "dark", "hero"],
+  colors: {
+    default: ["#050816", "#22e3a6", "#3b82f6", "#a855f7"],
+    labels: ["Sky", "Curtain 1", "Curtain 2", "Curtain 3"],
+  },
+  controls: [
+    { key: "speed", type: "float", label: "Speed", default: 1, min: 0, max: 3, step: 0.05 },
+    {
+      key: "scale",
+      type: "float",
+      label: "Scale",
+      description: "Horizontal density of the curtains.",
+      default: 1.4,
+      min: 0.4,
+      max: 4,
+      step: 0.05,
+    },
+    {
+      key: "intensity",
+      type: "float",
+      label: "Glow",
+      default: 1,
+      min: 0,
+      max: 2,
+      step: 0.05,
+    },
+    { key: "seed", type: "float", label: "Seed", default: 7, min: 0, max: 999, step: 1 },
+    {
+      key: "height",
+      type: "float",
+      label: "Height",
+      description: "Where the lower edge of the curtains sits, from bottom (0) to top (1).",
+      default: 0.3,
+      min: 0,
+      max: 0.8,
+      step: 0.01,
+    },
+  ],
+  presets: [
+    { id: "boreal", name: "Boreal", colors: ["#050816", "#22e3a6", "#3b82f6", "#a855f7"] },
+    {
+      id: "solar",
+      name: "Solar",
+      colors: ["#12060a", "#ff7a3d", "#ff3d77", "#ffd166"],
+      values: { height: 0.22, scale: 1.1 },
+    },
+    {
+      id: "glacier",
+      name: "Glacier",
+      colors: ["#03101c", "#8be9ff", "#4f9dff", "#d6f6ff"],
+      values: { intensity: 0.8, speed: 0.7, height: 0.38 },
+    },
+  ],
+  reactive: { pointer: false, scroll: false },
+  cost: 2,
+  tier: "free",
+  license: "MIT",
+  version: "1.0.0",
+  addedAt: "2026-10-14",
+  featured: true,
+  stillTime: 9,
+  provenance: "Written from scratch for Shadeon: layered noise curtains with exponential falloff.",
+};
