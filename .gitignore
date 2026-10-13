@@ -50,3 +50,6 @@ next-env.d.ts
 # local development database
 /.data/
 !.env.example
+
+# shader review screenshots
+/.shots/

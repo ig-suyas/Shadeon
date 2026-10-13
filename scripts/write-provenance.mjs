@@ -171,6 +171,60 @@ const NOTES = {
     ],
     chunks: "HEADER, HASH, SEED, DITHER",
   },
+  "caustic-light": {
+    name: "Caustic Light",
+    written: "2026-10-14",
+    techniques: [
+      "Ridged value noise (bright where the noise crosses its midpoint) to draw thin wandering lines.",
+      "The product of two ridged fields, raised to a power, so light concentrates where lines meet.",
+      "A value-noise warp of the sampling position, and two scales of the pattern drifting in opposite directions.",
+      "One-LSB hash dither.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, DITHER",
+  },
+  "bokeh-drift": {
+    name: "Bokeh Drift",
+    written: "2026-10-14",
+    techniques: [
+      "Jittered grid of discs with a 3x3 neighbour search so discs can overlap cell borders.",
+      "Disc with a brighter rim, the shape a defocused point light makes.",
+      "Three layers at different sizes and drift speeds, added together.",
+      "Exponential roll-off on the sum, and a hash test that leaves some cells dark.",
+    ],
+    chunks: "HEADER, HASH, SEED, DITHER",
+  },
+  "ink-smoke": {
+    name: "Ink Smoke",
+    written: "2026-10-14",
+    techniques: [
+      "Nested domain warping: fractal Brownian motion sampled at a position displaced by fractal Brownian motion, twice.",
+      "Colour from the final density and from the length of the displacement vectors.",
+      "One-LSB hash dither.",
+    ],
+    chunks: "HEADER, HASH, NOISE, FBM, SEED, DITHER",
+  },
+  "horizon-grid": {
+    name: "Horizon Grid",
+    written: "2026-10-14",
+    techniques: [
+      "A ground plane in perspective computed analytically: depth is the reciprocal of the distance below the horizon.",
+      "Anti-aliased grid lines without derivatives: the size of a pixel in grid cells is computed from the projection, and lines fade out when they become thinner than a pixel.",
+      "Exponential distance fog and an exponential horizon glow.",
+      "Forward travel from time plus page scroll progress.",
+    ],
+    chunks: "HEADER, HASH, SEED, DITHER",
+  },
+  "lava-blobs": {
+    name: "Lava Blobs",
+    written: "2026-10-14",
+    techniques: [
+      "Metaballs: each blob contributes radius squared over distance squared; the surface is where the sum crosses a threshold.",
+      "Blob centres on slow sine paths; the pointer is one more blob.",
+      "Shading from the field value: a core colour inside and a halo outside.",
+      "One-LSB hash dither.",
+    ],
+    chunks: "HEADER, HASH, SEED, DITHER",
+  },
 };
 
 let written = 0;
