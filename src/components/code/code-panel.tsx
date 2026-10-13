@@ -1,0 +1,201 @@
+"use client";
+
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { CopyButton } from "@/components/ui/copy-button";
+import type { ExportResult } from "@/export/generate";
+import { EXPORT_TARGETS, TARGET_LABELS, type ExportTarget } from "@/export/targets";
+import { cn } from "@/lib/cn";
+import { SITE_URL } from "@/lib/site";
+import { loadFragment } from "@/shaders/loaders";
+import type { ShaderMeta } from "@/shaders/schema";
+
+interface CodePanelProps {
+  shader: ShaderMeta;
+  /** Current settings. The code always reflects exactly these. */
+  settings?: Record<string, unknown>;
+  target: ExportTarget;
+  onTargetChange: (target: ExportTarget) => void;
+  className?: string;
+}
+
+type Exports = Record<ExportTarget, ExportResult>;
+
+/** Generates all three outputs for a shader + settings. The generator loads on demand. */
+function useExports(shader: ShaderMeta, settingsKey: string): Exports | "error" | null {
+  const [state, setState] = useState<{ key: string; value: Exports | "error" } | null>(null);
+  const key = `${shader.id}|${settingsKey}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [{ generateExport }, fragment] = await Promise.all([
+          import("@/export/generate"),
+          loadFragment(shader.id),
+        ]);
+        const settings = settingsKey
+          ? (JSON.parse(settingsKey) as Record<string, unknown>)
+          : undefined;
+        const value = Object.fromEntries(
+          EXPORT_TARGETS.map((target) => [
+            target,
+            generateExport({ meta: shader, fragment, settings }, target),
+          ]),
+        ) as Exports;
+        if (!cancelled) setState({ key, value });
+      } catch {
+        if (!cancelled) setState({ key, value: "error" });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [shader, settingsKey, key]);
+
+  return state?.key === key ? state.value : null;
+}
+
+/** Highlights code off the main render path; until it is ready the caller shows plain text. */
+function useHighlighted(result: ExportResult | null): string | null {
+  const [state, setState] = useState<{ code: string; html: string } | null>(null);
+
+  useEffect(() => {
+    if (!result) return;
+    let cancelled = false;
+    void import("@/lib/highlight")
+      .then(({ highlight }) => highlight(result.code, result.language))
+      .then((html) => {
+        if (!cancelled) setState({ code: result.code, html });
+      })
+      .catch(() => {
+        // Plain text stays; highlighting is an enhancement.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [result]);
+
+  return result && state?.code === result.code ? state.html : null;
+}
+
+/**
+ * Code for one shader: React TS, JavaScript and GLSL tabs, syntax highlighting,
+ * one-click copy with confirmation, and the install command.
+ */
+export function CodePanel({ shader, settings, target, onTargetChange, className }: CodePanelProps) {
+  const id = useId();
+  const tabs = useRef<Map<ExportTarget, HTMLButtonElement>>(new Map());
+  const exports = useExports(shader, settings ? JSON.stringify(settings) : "");
+  const result = exports && exports !== "error" ? exports[target] : null;
+  const html = useHighlighted(result);
+  const install = `npx shadcn@latest add ${SITE_URL}/r/${shader.id}.json`;
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    const index = EXPORT_TARGETS.indexOf(target);
+    const last = EXPORT_TARGETS.length - 1;
+    let next = index;
+    if (event.key === "ArrowRight") next = index === last ? 0 : index + 1;
+    else if (event.key === "ArrowLeft") next = index === 0 ? last : index - 1;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = last;
+    else return;
+    event.preventDefault();
+    event.stopPropagation();
+    const nextTarget = EXPORT_TARGETS[next];
+    if (!nextTarget) return;
+    onTargetChange(nextTarget);
+    tabs.current.get(nextTarget)?.focus();
+  };
+
+  return (
+    <div className={cn("flex min-h-0 min-w-0 flex-col", className)} data-testid="code-panel">
+      <div className="border-line flex items-center justify-between gap-3 border-b px-3 py-2.5">
+        <div
+          role="tablist"
+          aria-label="Code format"
+          onKeyDown={onKeyDown}
+          className="scroll-quiet flex min-w-0 gap-1 overflow-x-auto"
+        >
+          {EXPORT_TARGETS.map((item) => (
+            <button
+              key={item}
+              ref={(element) => {
+                if (element) tabs.current.set(item, element);
+                else tabs.current.delete(item);
+              }}
+              type="button"
+              role="tab"
+              id={`${id}-tab-${item}`}
+              aria-selected={item === target}
+              aria-controls={`${id}-panel`}
+              tabIndex={item === target ? 0 : -1}
+              onClick={() => onTargetChange(item)}
+              className="text-text-muted hover:text-text aria-selected:bg-bg-sunken aria-selected:text-text rounded-control shrink-0 px-3 py-1.5 text-sm font-medium transition-colors duration-150"
+            >
+              {TARGET_LABELS[item]}
+            </button>
+          ))}
+        </div>
+        <CopyButton
+          text={() => {
+            if (!result) throw new Error("Code is not ready");
+            return result.code;
+          }}
+          label="Copy code"
+          compact
+          variant="solid"
+          size="sm"
+        />
+      </div>
+
+      {target === "react" ? (
+        <div className="border-line flex items-center gap-2 border-b py-2 pr-2 pl-4">
+          <code className="text-text-muted scroll-quiet min-w-0 flex-1 overflow-x-auto font-mono text-xs whitespace-nowrap">
+            {install}
+          </code>
+          <CopyButton
+            text={install}
+            label="Copy install command"
+            ariaLabel="Copy install command"
+            iconOnly
+            variant="quiet"
+            size="sm"
+          />
+        </div>
+      ) : null}
+
+      <div
+        role="tabpanel"
+        id={`${id}-panel`}
+        aria-labelledby={`${id}-tab-${target}`}
+        tabIndex={0}
+        className="bg-bg-sunken code-surface min-h-0 flex-1 overflow-auto font-mono text-[13px] leading-relaxed"
+      >
+        {exports === "error" ? (
+          <p className="text-danger p-4 font-sans text-sm">
+            The code could not be generated. Check your connection and reopen this panel.
+          </p>
+        ) : !result ? (
+          <div aria-busy="true" className="flex flex-col gap-2.5 p-4">
+            <span className="sr-only">Generating code</span>
+            {[72, 44, 58, 30, 66, 52, 38, 61].map((width, index) => (
+              <span key={index} className="bg-line h-3 rounded-sm" style={{ width: `${width}%` }} />
+            ))}
+          </div>
+        ) : html ? (
+          <div dangerouslySetInnerHTML={{ __html: html }} />
+        ) : (
+          <pre>
+            <code>{result.code}</code>
+          </pre>
+        )}
+      </div>
+
+      {result ? (
+        <p className="border-line text-text-faint border-t px-4 py-2 font-mono text-xs">
+          {result.filename}, {result.code.split("\n").length.toLocaleString("en-US")} lines
+        </p>
+      ) : null}
+    </div>
+  );
+}

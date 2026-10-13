@@ -24,6 +24,7 @@
 }
 
 html {
+  scrollbar-gutter: stable;
   scroll-padding-top: calc(var(--header-height) + 24px);
 }
 
@@ -96,4 +97,39 @@ body {
       animation-range: entry 5% entry 40%;
     }
   }
+}
+
+/*
+ * Code blocks. Shiki emits both themes as CSS variables on every token; these
+ * rules pick one to match the page theme.
+ */
+.code-surface pre {
+  margin: 0;
+  padding: 16px;
+  min-width: max-content;
+  background: transparent !important;
+  tab-size: 2;
+}
+
+.code-surface .shiki span {
+  color: var(--shiki-dark);
+}
+
+:root[data-theme="light"] .code-surface .shiki span {
+  color: var(--shiki-light);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .code-surface .shiki span {
+    color: var(--shiki-light);
+  }
+}
+
+/* Horizontally scrolling chip rows: still scrollable by touch, wheel and keyboard, without a bar. */
+.scroll-quiet {
+  scrollbar-width: none;
+}
+
+.scroll-quiet::-webkit-scrollbar {
+  display: none;
 }

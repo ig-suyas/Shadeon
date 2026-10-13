@@ -1,25 +1,13 @@
 import { z } from "zod";
+import { CATEGORIES, type ShaderCategory } from "./categories";
+
+export { CATEGORIES, type ShaderCategory };
 
 /**
  * Shader metadata schema. Shader `meta.ts` files are typed with `ShaderMeta`
  * and checked against this schema in tests and build scripts, so Zod never
  * ships in the browser bundle for the catalog.
  */
-
-export const CATEGORIES = [
-  "gradient",
-  "aurora",
-  "liquid",
-  "glass",
-  "grain",
-  "halftone",
-  "waves",
-  "lines",
-  "particles",
-  "plasma",
-  "fractal",
-  "interactive",
-] as const;
 
 /** Every shader exposes these controls, each with its own range and default. */
 export const STANDARD_KEYS = ["speed", "scale", "intensity", "seed"] as const;
@@ -136,7 +124,6 @@ export const shaderMetaSchema = z
     }
   });
 
-export type ShaderCategory = (typeof CATEGORIES)[number];
 export type ShaderControl = z.infer<typeof controlSchema>;
 export type ShaderPreset = z.infer<typeof presetSchema>;
 export type ShaderMeta = z.infer<typeof shaderMetaSchema>;

@@ -3,6 +3,7 @@ import { SITE_URL } from "@/lib/site";
 import type { ShaderMeta } from "@/shaders/schema";
 import { resolveSettings, type Settings, type SettingValue } from "@/shaders/settings";
 import { componentName } from "./naming";
+import { EXPORT_TARGETS, TARGET_LABELS, type ExportTarget } from "./targets";
 import { RUNTIME_JS, RUNTIME_TS } from "./runtime-source.generated";
 
 export { componentName };
@@ -13,8 +14,7 @@ export { componentName };
  * the live preview executes.
  */
 
-export const EXPORT_TARGETS = ["react", "vanilla", "glsl"] as const;
-export type ExportTarget = (typeof EXPORT_TARGETS)[number];
+export { EXPORT_TARGETS, type ExportTarget };
 
 export interface ExportInput {
   meta: ShaderMeta;
@@ -222,7 +222,7 @@ export function generateExport(input: ExportInput, target: ExportTarget): Export
     case "react":
       return {
         target,
-        label: "React TS",
+        label: TARGET_LABELS.react,
         language: "tsx",
         filename: `${meta.id}.tsx`,
         code: generateReact(meta, fragment, settings),
@@ -230,7 +230,7 @@ export function generateExport(input: ExportInput, target: ExportTarget): Export
     case "vanilla":
       return {
         target,
-        label: "JavaScript",
+        label: TARGET_LABELS.vanilla,
         language: "javascript",
         filename: `${meta.id}.js`,
         code: generateVanilla(meta, fragment, settings),
@@ -238,7 +238,7 @@ export function generateExport(input: ExportInput, target: ExportTarget): Export
     case "glsl":
       return {
         target,
-        label: "GLSL",
+        label: TARGET_LABELS.glsl,
         language: "glsl",
         filename: `${meta.id}.frag`,
         code: generateGlsl(meta, fragment, settings),

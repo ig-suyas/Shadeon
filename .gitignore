@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated registry files
+/public/r/
+
+# playwright
+/test-results/
+/playwright-report/

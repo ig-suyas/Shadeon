@@ -53,7 +53,7 @@ export function TuneDemo({ shaders }: { shaders: ShaderMeta[] }) {
       <div
         role="group"
         aria-label="Shader"
-        className="border-line flex gap-2 overflow-x-auto border-b p-3"
+        className="border-line scroll-quiet flex gap-2 overflow-x-auto border-b p-3"
       >
         {shaders.map((item) => (
           <button
