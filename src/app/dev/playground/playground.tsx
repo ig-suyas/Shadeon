@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { benchmarkFragment } from "@/engine/benchmark";
 import { dedicatedCount } from "@/engine/context-budget";
 import { ShaderCanvas, type ShaderStatus } from "@/engine/ShaderCanvas";
 import { sharedStats } from "@/engine/shared-context";
@@ -21,6 +22,35 @@ export function Playground() {
   const [target, setTarget] = useState<ExportTarget>("react");
   const [status, setStatus] = useState<ShaderStatus>("poster");
   const [stats, setStats] = useState("");
+  const [bench, setBench] = useState("");
+
+  const runBenchmark = async (): Promise<void> => {
+    setBench("measuring");
+    const best = new Map<string, number>();
+    const failed = new Map<string, string>();
+    // Three passes over every shader, keeping the fastest: the GPU speeds up as
+    // it warms, so a single pass would penalise whichever shader runs first.
+    for (let pass = 0; pass < 3; pass++) {
+      for (const item of shaders) {
+        const source = await loadFragment(item.id);
+        // Yield between shaders so the page stays responsive.
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        try {
+          const { msPerFrame } = benchmarkFragment(source, defaultSettings(item));
+          best.set(item.id, Math.min(best.get(item.id) ?? Infinity, msPerFrame));
+        } catch (error) {
+          failed.set(item.id, error instanceof Error ? error.message : "error");
+        }
+      }
+      setBench(`pass ${pass + 1} of 3`);
+    }
+    const lines = shaders.map((item) =>
+      failed.has(item.id)
+        ? `${item.id.padEnd(22)} failed: ${failed.get(item.id) ?? ""}`
+        : `${item.id.padEnd(22)} ${(best.get(item.id) ?? 0).toFixed(2)} ms  (rated ${item.cost})`,
+    );
+    setBench(`${lines.join("\n")}\ndone`);
+  };
 
   const settings = useMemo(
     () => (shader ? (overrides[shader.id] ?? defaultSettings(shader)) : null),
@@ -172,6 +202,26 @@ export function Playground() {
             )),
           )}
         </div>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-text-muted text-sm font-medium">
+          4. Cost: GPU time per 1280x720 frame on this machine (compare within one run)
+        </h2>
+        <button
+          type="button"
+          onClick={() => void runBenchmark()}
+          data-testid="run-bench"
+          className="border-line rounded-control self-start border px-3 py-1.5 text-sm"
+        >
+          Measure all shaders
+        </button>
+        <pre
+          data-testid="bench"
+          className="border-line bg-bg-sunken rounded-card min-h-10 overflow-auto border p-3 font-mono text-xs leading-relaxed"
+        >
+          {bench}
+        </pre>
       </section>
 
       <section className="flex flex-col gap-4">

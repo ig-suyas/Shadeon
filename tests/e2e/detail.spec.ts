@@ -1,7 +1,9 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { PNG } from "pngjs";
+import { shaders } from "../../src/shaders/registry";
 
-const SHADERS = ["mesh-drift", "aurora-veil", "contour-field"] as const;
+// Every shader in the catalog gets the export-vs-preview pixel comparison.
+const SHADERS = shaders.map((shader) => shader.id);
 
 function preview(page: Page): Locator {
   return page.locator("[data-testid=detail-preview] [data-shader]");

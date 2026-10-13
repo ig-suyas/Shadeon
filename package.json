@@ -18,7 +18,8 @@
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "check:launch": "tsx scripts/check-launch.ts"
+    "check:launch": "tsx scripts/check-launch.ts",
+    "gen:catalog": "node scripts/write-provenance.mjs && node scripts/sync-catalog.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

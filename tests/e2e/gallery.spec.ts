@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { shaders } from "../../src/shaders/registry";
 
 const viewer = "[data-testid=shader-viewer]";
 
@@ -170,7 +171,13 @@ test.describe("gallery", () => {
     const ids = await page
       .locator("[data-card]")
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-card")));
-    expect(ids).toEqual(["contour-field", "mesh-drift"]);
+    // Whatever the catalog holds: every shader tagged "pointer", in name order.
+    const expected = shaders
+      .filter((shader) => shader.tags.includes("pointer"))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((shader) => shader.id);
+    expect(expected.length).toBeGreaterThan(0);
+    expect(ids).toEqual(expected);
   });
 
   test("swipe down closes the viewer on touch screens", async ({ page, isMobile }) => {
