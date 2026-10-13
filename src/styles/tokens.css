@@ -1,0 +1,92 @@
+/*
+ * Design tokens. Provisional until the design direction is locked in Phase 2
+ * (see context.md, section 4). Components use these variables, or the Tailwind
+ * utilities mapped from them in globals.css; no raw colour values elsewhere.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #0a0b0d;
+  --bg-raised: #121418;
+  --bg-sunken: #060708;
+  --line: #22262d;
+  --line-strong: #363c46;
+
+  /* Text */
+  --text: #f1f2f4;
+  --text-muted: #a3a9b4;
+  --text-faint: #6d7480;
+
+  /* Accent and status: one accent, used sparingly */
+  --accent: #e8b04a;
+  --accent-contrast: #14100a;
+  --focus: #7db4ff;
+  --danger: #ff6b5e;
+  --ok: #4fd18b;
+
+  /* Shape */
+  --r-control: 6px;
+  --r-card: 10px;
+
+  /* Motion */
+  --easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-expand: 400ms;
+
+  /* Layout */
+  --content-max: 1320px;
+  --gutter: clamp(16px, 4vw, 40px);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f7f6f3;
+  --bg-raised: #ffffff;
+  --bg-sunken: #eeece7;
+  --line: #dedbd3;
+  --line-strong: #c4c0b6;
+
+  --text: #15161a;
+  --text-muted: #555a64;
+  --text-faint: #7f848d;
+
+  --accent: #9a6408;
+  --accent-contrast: #ffffff;
+  --focus: #1f5fd1;
+  --danger: #c2331f;
+  --ok: #1c7f4b;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    --bg: #f7f6f3;
+    --bg-raised: #ffffff;
+    --bg-sunken: #eeece7;
+    --line: #dedbd3;
+    --line-strong: #c4c0b6;
+
+    --text: #15161a;
+    --text-muted: #555a64;
+    --text-faint: #7f848d;
+
+    --accent: #9a6408;
+    --accent-contrast: #ffffff;
+    --focus: #1f5fd1;
+    --danger: #c2331f;
+    --ok: #1c7f4b;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-expand: 0ms;
+  }
+}
