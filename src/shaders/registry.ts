@@ -3,10 +3,13 @@ import type { ShaderMeta } from "./schema";
 import { meta as auroraVeil } from "./aurora-veil/meta";
 import { meta as bokehDrift } from "./bokeh-drift/meta";
 import { meta as causticLight } from "./caustic-light/meta";
+import { meta as cloudCover } from "./cloud-cover/meta";
+import { meta as conicSweep } from "./conic-sweep/meta";
 import { meta as contourField } from "./contour-field/meta";
 import { meta as dawnScroll } from "./dawn-scroll/meta";
 import { meta as ditherFade } from "./dither-fade/meta";
 import { meta as flowStrands } from "./flow-strands/meta";
+import { meta as frostedPane } from "./frosted-pane/meta";
 import { meta as grainWash } from "./grain-wash/meta";
 import { meta as halftoneDrift } from "./halftone-drift/meta";
 import { meta as horizonGrid } from "./horizon-grid/meta";
@@ -16,11 +19,15 @@ import { meta as lavaBlobs } from "./lava-blobs/meta";
 import { meta as lightLeak } from "./light-leak/meta";
 import { meta as liquidChrome } from "./liquid-chrome/meta";
 import { meta as meshDrift } from "./mesh-drift/meta";
+import { meta as paperPleats } from "./paper-pleats/meta";
 import { meta as phosphor } from "./phosphor/meta";
 import { meta as plasmaBloom } from "./plasma-bloom/meta";
+import { meta as pointerGlow } from "./pointer-glow/meta";
+import { meta as prismWave } from "./prism-wave/meta";
 import { meta as reededGlass } from "./reeded-glass/meta";
 import { meta as ripplePool } from "./ripple-pool/meta";
 import { meta as silkWaves } from "./silk-waves/meta";
+import { meta as softBars } from "./soft-bars/meta";
 import { meta as softTunnel } from "./soft-tunnel/meta";
 import { meta as starDrift } from "./star-drift/meta";
 
@@ -34,13 +41,20 @@ export const shaders: readonly ShaderMeta[] = [
   reededGlass,
   inkSmoke,
   lightLeak,
+  prismWave,
   auroraVeil,
   bokehDrift,
+  conicSweep,
   silkWaves,
+  frostedPane,
   dawnScroll,
   causticLight,
+  softBars,
   lavaBlobs,
+  cloudCover,
+  pointerGlow,
   ripplePool,
+  paperPleats,
   contourField,
   flowStrands,
   horizonGrid,

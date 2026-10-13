@@ -64,3 +64,36 @@ export const DITHER = /* glsl */ `vec3 dither(vec3 color) {
   return color + (hash21(gl_FragCoord.xy) - 0.5) / 255.0;
 }
 `;
+
+/**
+ * A soft colour scene for shaders that look at something through glass: four
+ * colours, each pulling on a point by its distance to a slowly wandering
+ * anchor, read through a gentle noise warp. Needs NOISE and SEED, and the
+ * uniforms u_color1..u_color4, u_resolution, u_scale and u_seed.
+ */
+export const SOFT_SCENE = /* glsl */ `vec2 sceneAnchor(float t, float phase, vec2 rate, vec2 aspect) {
+  return 0.42 * aspect * vec2(sin(t * rate.x + phase), cos(t * rate.y + phase * 1.37));
+}
+
+vec3 softScene(vec2 uv, float t) {
+  vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
+  vec2 p = (uv - 0.5) * aspect;
+  vec2 n = p * u_scale + seedOffset(u_seed);
+  vec2 warp = vec2(
+    noise(n + vec2(t, -t * 0.7)),
+    noise(n + vec2(5.2 - t * 0.6, 1.3 + t))
+  ) - 0.5;
+  vec2 q = p + warp * 0.85;
+  float phase = u_seed * 1.7;
+  vec2 d1 = q - sceneAnchor(t, phase, vec2(1.3, 1.1), aspect);
+  vec2 d2 = q - sceneAnchor(t, phase + 2.1, vec2(0.9, 1.4), aspect);
+  vec2 d3 = q - sceneAnchor(t, phase + 4.2, vec2(1.1, 0.8), aspect);
+  vec2 d4 = q - sceneAnchor(t, phase + 5.5, vec2(0.7, 1.2), aspect);
+  float w1 = exp(-dot(d1, d1) * 4.6);
+  float w2 = exp(-dot(d2, d2) * 4.6);
+  float w3 = exp(-dot(d3, d3) * 4.6);
+  float w4 = exp(-dot(d4, d4) * 4.6);
+  return (u_color1 * w1 + u_color2 * w2 + u_color3 * w3 + u_color4 * w4)
+    / (w1 + w2 + w3 + w4 + 1e-4);
+}
+`;

@@ -225,6 +225,79 @@ const NOTES = {
     ],
     chunks: "HEADER, HASH, SEED, DITHER",
   },
+  "conic-sweep": {
+    name: "Conic Sweep",
+    written: "2026-10-14",
+    techniques: [
+      "Angular (conic) gradient: colour chosen by the angle around a pivot, through a four-stop looping palette.",
+      "The pivot moves on a sine path; a value-noise warp and a radius-dependent twist bend the sweep.",
+      "Blend to the average colour near the pivot, where all colours would otherwise pinch together.",
+      "Per-pixel hash grain.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED",
+  },
+  "soft-bars": {
+    name: "Soft Bars",
+    written: "2026-10-14",
+    techniques: [
+      "A four-stop looping palette indexed by horizontal position.",
+      "The index is offset by two sine waves and by value noise that varies with height, so bar edges sway.",
+      "A sine brightness profile from bottom to top, and one-LSB hash dither.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, DITHER",
+  },
+  "cloud-cover": {
+    name: "Cloud Cover",
+    written: "2026-10-14",
+    techniques: [
+      "Cloud density from fractal Brownian motion warped by a second, slower fractal Brownian motion.",
+      "A threshold with a soft edge for cover.",
+      "Top lighting by comparing the density with a sample taken slightly higher.",
+      "Vertical sky gradient and one-LSB hash dither.",
+    ],
+    chunks: "HEADER, HASH, NOISE, FBM, SEED, DITHER",
+  },
+  "paper-pleats": {
+    name: "Paper Pleats",
+    written: "2026-10-14",
+    techniques: [
+      "A repeating shading profile along a rotated axis: a lit face, a shaded face and a narrow Gaussian highlight at the fold.",
+      "Value noise shifts the profile along the pleat so the folds wander.",
+      "Per-pleat tint from value noise of the pleat index.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, DITHER",
+  },
+  "pointer-glow": {
+    name: "Pointer Glow",
+    written: "2026-10-14",
+    techniques: [
+      "Height field from two octaves of value noise; surface normal by finite differences.",
+      "A point light at the pointer just above the surface: Lambert shading with inverse-square falloff.",
+      "A Gaussian core for the lamp itself.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, DITHER",
+  },
+  "frosted-pane": {
+    name: "Frosted Pane",
+    written: "2026-10-14",
+    techniques: [
+      "The shared soft scene (distance-weighted colour anchors) as the view behind the glass.",
+      "Frost as scattering: the lookup position is displaced by a fine two-channel value-noise field.",
+      "A Gaussian sheen band across the pane and per-pixel hash grain.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, SOFT_SCENE",
+  },
+  "prism-wave": {
+    name: "Prism Wave",
+    written: "2026-10-14",
+    techniques: [
+      "The shared soft scene as the view behind the glass.",
+      "A horizontal displacement from two sine waves and value noise running down the pane.",
+      "Chromatic dispersion approximated by sampling the scene three times with slightly different displacement, one per colour channel.",
+      "Per-pixel hash grain.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, SOFT_SCENE",
+  },
 };
 
 let written = 0;
