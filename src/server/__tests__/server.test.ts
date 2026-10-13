@@ -14,6 +14,7 @@ import {
   confirmWaitlist,
   joinWaitlist,
   leaveWaitlist,
+  purgeExpired,
 } from "../repository";
 import { createToken, hashToken, isTokenShaped } from "../tokens";
 
@@ -256,5 +257,39 @@ describe("rate limiting", () => {
     const subject = `shared-${Math.random()}`;
     const busy = { hit: async (): Promise<number> => 99 };
     expect(await withinLimit("unit", subject, { max: 5, windowSeconds: 60 }, busy)).toBe(false);
+  });
+});
+
+describe("retention", () => {
+  const now = new Date("2026-10-14T10:00:00Z");
+  const daysAgo = (days: number): Date => new Date(now.getTime() - days * DAY);
+
+  it("removes unconfirmed waitlist addresses after 30 days and keeps the rest", async () => {
+    const db = await freshDatabase();
+    await joinWaitlist(db, "stale@example.com", daysAgo(31));
+    await joinWaitlist(db, "recent@example.com", daysAgo(29));
+    const confirmed = await joinWaitlist(db, "confirmed@example.com", daysAgo(400));
+    await confirmWaitlist(db, confirmed?.confirmToken ?? "", daysAgo(399));
+
+    await purgeExpired(db, now);
+    const emails = (await db.select().from(waitlist)).map((row) => row.email).sort();
+    expect(emails).toEqual(["confirmed@example.com", "recent@example.com"]);
+  });
+
+  it("removes requests and messages older than 24 months", async () => {
+    const db = await freshDatabase();
+    await db.insert(shaderRequests).values([
+      { title: "Old", details: "An old request, long handled.", createdAt: daysAgo(800) },
+      { title: "New", details: "A recent request to keep.", createdAt: daysAgo(10) },
+    ]);
+    await db.insert(messages).values([
+      { topic: "other", message: "An old message.", createdAt: daysAgo(800) },
+      { topic: "other", message: "A recent message.", createdAt: daysAgo(700) },
+    ]);
+    await purgeExpired(db, now);
+    expect((await db.select().from(shaderRequests)).map((row) => row.title)).toEqual(["New"]);
+    expect((await db.select().from(messages)).map((row) => row.message)).toEqual([
+      "A recent message.",
+    ]);
   });
 });

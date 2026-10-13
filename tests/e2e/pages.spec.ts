@@ -36,8 +36,7 @@ test.describe("supporting pages", () => {
       .locator("header a[href^='/'], footer a[href^='/']")
       .evaluateAll((links) => [...new Set(links.map((link) => link.getAttribute("href") ?? ""))]);
     expect(hrefs.length).toBeGreaterThan(6);
-    const pending = ["/legal/license", "/legal/terms", "/legal/privacy"]; // built in Phase 6
-    for (const href of hrefs.filter((item) => !pending.includes(item))) {
+    for (const href of hrefs) {
       const response = await request.get(href);
       expect(response.status(), href).toBe(200);
     }

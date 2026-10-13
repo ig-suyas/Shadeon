@@ -9,7 +9,7 @@ import {
   waitlistSchema,
   type FormState,
 } from "@/lib/forms";
-import { getDatabase } from "./db/client";
+import { getDatabase, type Database } from "./db/client";
 import { sendWaitlistConfirmation } from "./mail";
 import { withinLimit } from "./rate-limit";
 import {
@@ -18,6 +18,7 @@ import {
   confirmWaitlist,
   joinWaitlist,
   leaveWaitlist,
+  purgeExpired,
 } from "./repository";
 import { isTokenShaped } from "./tokens";
 import { verifyTurnstile } from "./turnstile";
@@ -25,6 +26,15 @@ import { verifyTurnstile } from "./turnstile";
 const UNAVAILABLE = "This form is not available right now. Please try again later.";
 const TOO_MANY = "Too many attempts. Please wait a few minutes and try again.";
 const CHECK_FAILED = "We could not confirm you are human. Reload the page and try again.";
+
+/** Retention is enforced here, after writes, so no scheduled job is needed. A failure never blocks the form. */
+async function tidy(db: Database): Promise<void> {
+  try {
+    await purgeExpired(db);
+  } catch (error) {
+    console.error("retention purge failed:", error instanceof Error ? error.message : error);
+  }
+}
 
 /** Humans take longer than this to fill a form; many bots do not. */
 const MIN_FILL_MS = 1500;
@@ -106,6 +116,7 @@ export async function joinWaitlistAction(_previous: FormState, form: FormData): 
     if (mail && !(await sendWaitlistConfirmation(mail))) {
       return { status: "error", message: UNAVAILABLE, values: echo(form, keys) };
     }
+    await tidy(db);
     // The same answer whether or not the address was already there.
     return { status: "success", message: WAITLIST_DONE };
   } catch (error) {
@@ -134,6 +145,7 @@ export async function requestShaderAction(
     const db = await getDatabase();
     if (!db) return { status: "error", message: UNAVAILABLE, values: echo(form, keys) };
     await addShaderRequest(db, parsed.data);
+    await tidy(db);
     return done;
   } catch (error) {
     console.error("request action failed:", error instanceof Error ? error.message : error);
@@ -160,6 +172,7 @@ export async function contactAction(_previous: FormState, form: FormData): Promi
     const db = await getDatabase();
     if (!db) return { status: "error", message: UNAVAILABLE, values: echo(form, keys) };
     await addMessage(db, parsed.data);
+    await tidy(db);
     return done;
   } catch (error) {
     console.error("contact action failed:", error instanceof Error ? error.message : error);

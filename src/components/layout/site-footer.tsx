@@ -25,6 +25,7 @@ const groups = [
       { href: "/legal/license", label: "License" },
       { href: "/legal/terms", label: "Terms" },
       { href: "/legal/privacy", label: "Privacy" },
+      { href: "/legal/cookies", label: "Cookies" },
     ],
   },
 ];

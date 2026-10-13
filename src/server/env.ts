@@ -20,6 +20,8 @@ const schema = z.object({
   /** Resend API key and the verified sender, for example "Shadeon <hello@shadeon.dev>". */
   RESEND_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(3).optional(),
+  /** Shared secret for the daily retention job. Vercel Cron sends it as a bearer token. */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 function emptyToUndefined(source: NodeJS.ProcessEnv): Record<string, string | undefined> {

@@ -1,4 +1,5 @@
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, lt } from "drizzle-orm";
+import { RETENTION } from "@/content/legal";
 import type { Database } from "./db/client";
 import { messages, shaderRequests, waitlist } from "./db/schema";
 import { createToken, hashToken } from "./tokens";
@@ -112,4 +113,23 @@ export async function addMessage(
     message: input.message,
     email: input.email ?? null,
   });
+}
+
+/**
+ * Deletes data that has passed its retention period (see RETENTION in
+ * src/content/legal.ts, which the Privacy Policy quotes): waitlist addresses
+ * that were never confirmed, and old requests and messages. Runs after form
+ * submissions, so no scheduled job is needed.
+ */
+export async function purgeExpired(db: Database, now: Date = new Date()): Promise<void> {
+  const pendingCutoff = new Date(
+    now.getTime() - RETENTION.unconfirmedWaitlistDays * 24 * 60 * 60 * 1000,
+  );
+  const messageCutoff = new Date(now);
+  messageCutoff.setMonth(messageCutoff.getMonth() - RETENTION.messagesMonths);
+  await db
+    .delete(waitlist)
+    .where(and(eq(waitlist.status, "pending"), lt(waitlist.lastSentAt, pendingCutoff)));
+  await db.delete(shaderRequests).where(lt(shaderRequests.createdAt, messageCutoff));
+  await db.delete(messages).where(lt(messages.createdAt, messageCutoff));
 }
