@@ -146,6 +146,11 @@ test.describe("exported code matches the preview", () => {
       );
       await standalone.waitForTimeout(1200);
 
+      // Copying scrolled the page to the code panel. Scroll-reactive shaders read the
+      // scroll position, so return to the top (the standalone page cannot scroll at all).
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(400);
+
       const expected = PNG.sync.read(
         await surface.locator("canvas").screenshot({ path: testInfo.outputPath("preview.png") }),
       );

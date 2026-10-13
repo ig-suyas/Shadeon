@@ -11,9 +11,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "../src/shaders");
 /** Gallery order for the "Featured" sort. Mix categories so the first screen shows range. */
 const DISPLAY_ORDER = [
   "mesh-drift",
+  "liquid-chrome",
+  "reeded-glass",
   "aurora-veil",
   "silk-waves",
+  "ripple-pool",
+  "dawn-scroll",
   "contour-field",
+  "flow-strands",
   "plasma-bloom",
   "halftone-drift",
   "star-drift",

@@ -8,9 +8,14 @@
  */
 const loaders: Record<string, () => Promise<{ fragment: string }>> = {
   "mesh-drift": () => import("./mesh-drift/fragment"),
+  "liquid-chrome": () => import("./liquid-chrome/fragment"),
+  "reeded-glass": () => import("./reeded-glass/fragment"),
   "aurora-veil": () => import("./aurora-veil/fragment"),
   "silk-waves": () => import("./silk-waves/fragment"),
+  "ripple-pool": () => import("./ripple-pool/fragment"),
+  "dawn-scroll": () => import("./dawn-scroll/fragment"),
   "contour-field": () => import("./contour-field/fragment"),
+  "flow-strands": () => import("./flow-strands/fragment"),
   "plasma-bloom": () => import("./plasma-bloom/fragment"),
   "halftone-drift": () => import("./halftone-drift/fragment"),
   "star-drift": () => import("./star-drift/fragment"),

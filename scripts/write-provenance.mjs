@@ -63,6 +63,60 @@ const NOTES = {
     ],
     chunks: "HEADER, HASH, NOISE, FBM, SEED",
   },
+  "liquid-chrome": {
+    name: "Liquid Chrome",
+    written: "2026-10-14",
+    techniques: [
+      "Height field from two octaves of value noise read through a noise warp.",
+      "Surface normal by finite differences (three height samples).",
+      "Procedural reflection: the reflected view vector indexes a graded backdrop and sine strip lights, in the manner of a studio environment map.",
+      "Rim term from the normal's tilt away from the viewer.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, DITHER",
+  },
+  "reeded-glass": {
+    name: "Reeded Glass",
+    written: "2026-10-14",
+    techniques: [
+      "Distance-weighted colour blending between four moving anchors (the same approach as Mesh Drift) for the scene behind the glass.",
+      "Fluted glass as a row of lenses: the sampling position shifts in proportion to the position across each rib.",
+      "Groove darkening and a Gaussian highlight per rib.",
+      "Per-pixel hash grain.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED",
+  },
+  "flow-strands": {
+    name: "Flow Strands",
+    written: "2026-10-14",
+    techniques: [
+      "Flow field from a noise value used as an angle.",
+      "Line integral convolution: fine noise averaged along the streamline in both directions with a tapering weight.",
+      "Contrast curve on the result; slow value noise for the base colour.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, DITHER",
+  },
+  "ripple-pool": {
+    name: "Ripple Pool",
+    written: "2026-10-14",
+    techniques: [
+      "Height field as a sum of damped ring waves from the pointer and two wandering points.",
+      "Surface normal by finite differences.",
+      "Refraction approximated by offsetting the lookup of the pool floor along the normal.",
+      "Lambert shading, a Phong-style glint and a rim term.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED, DITHER",
+  },
+  "dawn-scroll": {
+    name: "Dawn Scroll",
+    written: "2026-10-14",
+    techniques: [
+      "Sky as a power-curve blend between a zenith and a horizon colour, both driven by a time-of-day value.",
+      "Time of day from page scroll progress plus an offset control.",
+      "Sun as two exponential lobes (core and glow).",
+      "Fractal Brownian motion stretched horizontally for haze bands.",
+    ],
+    chunks: "HEADER, HASH, NOISE, FBM, SEED, DITHER",
+  },
 };
 
 let written = 0;
