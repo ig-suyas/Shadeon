@@ -1,9 +1,14 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
+const local = (path: string): string => fileURLToPath(new URL(path, import.meta.url));
+
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    alias: {
+      "@": local("./src"),
+      "server-only": local("./src/server/__tests__/empty.ts"),
+    },
   },
   test: {
     environment: "jsdom",
