@@ -23,6 +23,8 @@ export interface ShaderCanvasProps {
    */
   mode?: "shared" | "dedicated";
   paused?: boolean;
+  /** CSS background shown until the shader is live. Defaults to a gradient of its colours. */
+  poster?: string;
   className?: string;
   style?: CSSProperties;
   onStatusChange?: (status: ShaderStatus) => void;
@@ -50,6 +52,7 @@ function ShaderSurface({
   settings,
   mode,
   paused = false,
+  poster,
   className,
   style,
   onStatusChange,
@@ -150,7 +153,7 @@ function ShaderSurface({
       style={{
         position: "relative",
         overflow: "hidden",
-        background: posterBackground(resolved.colors),
+        background: poster ?? posterBackground(resolved.colors),
         ...style,
       }}
     >

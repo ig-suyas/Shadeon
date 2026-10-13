@@ -285,8 +285,22 @@ export function addSlot(canvas: HTMLCanvasElement, options: SlotOptions): Slot {
 }
 
 /** Number of slots and compiled programs; used by tests and the dev playground. */
-export function sharedStats(): { slots: number; programs: number; scale: number } {
-  return { slots: slots.size, programs: programs.size, scale: governor.scale };
+export function sharedStats(): {
+  slots: number;
+  visible: number;
+  programs: number;
+  scale: number;
+  context: boolean;
+} {
+  let visible = 0;
+  for (const slot of slots.values()) if (slot.visible && !slot.failed) visible += 1;
+  return {
+    slots: slots.size,
+    visible,
+    programs: programs.size,
+    scale: governor.scale,
+    context: gl !== null,
+  };
 }
 
 /** Tears everything down. Tests only. */

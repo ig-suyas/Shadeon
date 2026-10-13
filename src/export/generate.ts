@@ -2,7 +2,10 @@ import { hexToRgb } from "@/engine/runtime";
 import { SITE_URL } from "@/lib/site";
 import type { ShaderMeta } from "@/shaders/schema";
 import { resolveSettings, type Settings, type SettingValue } from "@/shaders/settings";
+import { componentName } from "./naming";
 import { RUNTIME_JS, RUNTIME_TS } from "./runtime-source.generated";
+
+export { componentName };
 
 /**
  * Code export: turns a shader plus the current settings into copy-ready code.
@@ -28,13 +31,6 @@ export interface ExportResult {
   code: string;
 }
 
-export function componentName(id: string): string {
-  return id
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join("");
-}
-
 export function shaderUrl(meta: ShaderMeta): string {
   return `${SITE_URL}/shaders/${meta.id}`;
 }
@@ -54,7 +50,7 @@ function literal(value: SettingValue): string {
 
 function banner(meta: ShaderMeta, extra: string[] = []): string {
   const lines = [
-    `${meta.name} — Shadeon`,
+    `${meta.name} - Shadeon`,
     meta.description,
     `${shaderUrl(meta)} · v${meta.version} · MIT License`,
     ...(extra.length ? ["", ...extra] : []),
@@ -83,7 +79,7 @@ function generateGlsl(meta: ShaderMeta, fragment: string, settings: Settings): s
     }
   }
   return [
-    `// ${meta.name} — Shadeon`,
+    `// ${meta.name} - Shadeon`,
     `// ${shaderUrl(meta)} · v${meta.version} · MIT License`,
     "//",
     "// GLSL ES 1.00 fragment shader (WebGL1 and WebGL2). Draw it on a full-screen",

@@ -1,16 +1,35 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { Closing } from "@/components/landing/closing";
+import { Community } from "@/components/landing/community";
+import { Featured } from "@/components/landing/featured";
+import { Hero } from "@/components/landing/hero";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { Quality } from "@/components/landing/quality";
+import { getShader, shaders } from "@/shaders/registry";
 
-/** Placeholder until the landing page is built in Phase 2. */
+export const metadata: Metadata = {
+  title: { absolute: "Shadeon: animated shaders, ready to paste" },
+  description:
+    "A free library of original animated WebGL shaders. Tune one live, then copy it as a React component, plain JavaScript or raw GLSL.",
+};
+
 export default function Home() {
+  const hero = getShader("mesh-drift");
+  const closing = getShader("contour-field");
+  const featured = [
+    getShader("aurora-veil"),
+    getShader("contour-field"),
+    getShader("mesh-drift"),
+  ].filter((shader) => shader !== undefined);
+
   return (
-    <main className="flex flex-1 flex-col items-start justify-center gap-4 px-6 py-24">
-      <h1 className="text-3xl font-semibold tracking-tight">Shadeon</h1>
-      <p className="text-text-muted">The landing page is built in Phase 2.</p>
-      {process.env.NODE_ENV !== "production" ? (
-        <Link href="/dev/playground" className="text-accent underline underline-offset-4">
-          Open the engine playground
-        </Link>
-      ) : null}
+    <main id="main" className="flex flex-1 flex-col">
+      {hero ? <Hero shader={hero} /> : null}
+      <Featured shaders={featured} />
+      <HowItWorks shaders={[...shaders]} />
+      <Quality />
+      <Community />
+      {closing ? <Closing shader={closing} /> : null}
     </main>
   );
 }
