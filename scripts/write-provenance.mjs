@@ -117,6 +117,60 @@ const NOTES = {
     ],
     chunks: "HEADER, HASH, NOISE, FBM, SEED, DITHER",
   },
+  "light-leak": {
+    name: "Light Leak",
+    written: "2026-10-14",
+    techniques: [
+      "Three elliptical Gaussian glows whose centres drift on sine paths near the frame edges.",
+      "Screen blending so overlapping light rolls off instead of clipping.",
+      "A small value-noise warp of the plane so the glows are not perfect ellipses.",
+      "Time-stepped hash grain.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED",
+  },
+  "dither-fade": {
+    name: "Dither Fade",
+    written: "2026-10-14",
+    techniques: [
+      "Ordered (Bayer) dithering. The 8x8 threshold matrix is built arithmetically by nesting the 2x2 matrix three times, rather than stored as a table.",
+      "Tone from fractal Brownian motion with a vertical bias, sampled on a coarse pixel grid.",
+      "Three-colour quantisation: each of the two transitions is dithered separately.",
+    ],
+    chunks: "HEADER, HASH, NOISE, FBM, SEED",
+  },
+  phosphor: {
+    name: "Phosphor",
+    written: "2026-10-14",
+    techniques: [
+      "Barrel distortion of screen coordinates for the curved glass.",
+      "Cosine scanlines at a fixed device-pixel pitch.",
+      "A three-column mask that brightens red, green and blue in turn.",
+      "A Gaussian band that rolls vertically, and a quadratic vignette.",
+      "Value-noise colour wash as the picture.",
+    ],
+    chunks: "HEADER, HASH, NOISE, SEED",
+  },
+  "soft-tunnel": {
+    name: "Soft Tunnel",
+    written: "2026-10-14",
+    techniques: [
+      "Polar tunnel mapping: inverse radius as depth, angle as position around the wall.",
+      "Sine rings along depth and sine ribs around the angle, with the rib phase tied to depth for twist. The rib count is rounded to an integer so there is no seam.",
+      "Blend to a light colour near the vanishing point and a fall-off towards the edges.",
+      "One-LSB hash dither.",
+    ],
+    chunks: "HEADER, HASH, SEED, DITHER",
+  },
+  "julia-drift": {
+    name: "Julia Drift",
+    written: "2026-10-14",
+    techniques: [
+      "The Julia set of z squared plus c, a mathematical object, with c moving on a circle of radius 0.7885.",
+      "Escape-time iteration (56 steps) with the standard fractional (smooth) iteration count to remove banding.",
+      "A three-stop colour ramp on the smoothed count, and a separate colour for points that never escape.",
+    ],
+    chunks: "HEADER, HASH, SEED, DITHER",
+  },
 };
 
 let written = 0;

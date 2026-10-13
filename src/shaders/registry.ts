@@ -3,15 +3,20 @@ import type { ShaderMeta } from "./schema";
 import { meta as auroraVeil } from "./aurora-veil/meta";
 import { meta as contourField } from "./contour-field/meta";
 import { meta as dawnScroll } from "./dawn-scroll/meta";
+import { meta as ditherFade } from "./dither-fade/meta";
 import { meta as flowStrands } from "./flow-strands/meta";
 import { meta as grainWash } from "./grain-wash/meta";
 import { meta as halftoneDrift } from "./halftone-drift/meta";
+import { meta as juliaDrift } from "./julia-drift/meta";
+import { meta as lightLeak } from "./light-leak/meta";
 import { meta as liquidChrome } from "./liquid-chrome/meta";
 import { meta as meshDrift } from "./mesh-drift/meta";
+import { meta as phosphor } from "./phosphor/meta";
 import { meta as plasmaBloom } from "./plasma-bloom/meta";
 import { meta as reededGlass } from "./reeded-glass/meta";
 import { meta as ripplePool } from "./ripple-pool/meta";
 import { meta as silkWaves } from "./silk-waves/meta";
+import { meta as softTunnel } from "./soft-tunnel/meta";
 import { meta as starDrift } from "./star-drift/meta";
 
 /**
@@ -22,14 +27,19 @@ export const shaders: readonly ShaderMeta[] = [
   meshDrift,
   liquidChrome,
   reededGlass,
+  lightLeak,
   auroraVeil,
   silkWaves,
-  ripplePool,
   dawnScroll,
+  ripplePool,
   contourField,
   flowStrands,
+  softTunnel,
+  juliaDrift,
   plasmaBloom,
+  ditherFade,
   halftoneDrift,
+  phosphor,
   starDrift,
   grainWash,
 ];
