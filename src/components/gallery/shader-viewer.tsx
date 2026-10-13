@@ -1,6 +1,13 @@
 "use client";
 
-import { CaretLeftIcon, CaretRightIcon, CodeIcon, XIcon } from "@phosphor-icons/react";
+import {
+  CaretLeftIcon,
+  CaretRightIcon,
+  CodeIcon,
+  SlidersHorizontalIcon,
+  XIcon,
+} from "@phosphor-icons/react";
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -16,7 +23,8 @@ import { ShaderCanvas } from "@/engine/ShaderCanvas";
 import type { ExportTarget } from "@/export/targets";
 import { cn } from "@/lib/cn";
 import type { ShaderMeta } from "@/shaders/schema";
-import { applyPreset } from "@/shaders/settings";
+import { applyPreset, settingsToQuery } from "@/shaders/settings";
+import { detailHref } from "@/components/shader/shader-card";
 
 interface ShaderViewerProps {
   shader: ShaderMeta;
@@ -277,6 +285,14 @@ export function ShaderViewer({
                   </button>
                 </div>
               ) : null}
+              <Link
+                href={detailHref(shader.id, settingsToQuery(shader, settings).toString())}
+                data-testid="viewer-customize"
+                className={button("outline", "sm")}
+              >
+                <SlidersHorizontalIcon size={16} aria-hidden="true" />
+                <span className="max-sm:sr-only">Customize</span>
+              </Link>
               <button
                 type="button"
                 onClick={() => onCodeChange(code ? null : "react")}

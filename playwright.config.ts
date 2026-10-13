@@ -6,6 +6,8 @@ const baseURL = `http://localhost:${port}`;
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
+  // Shader tests render WebGL in software; more workers than this starve each other.
+  workers: 2,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",

@@ -1,3 +1,4 @@
+import { hexToHsl, hslToHex } from "@/lib/color";
 import type { ShaderMeta } from "./schema";
 
 /**
@@ -111,4 +112,41 @@ export function settingsFromQuery(meta: ShaderMeta, query: QueryInput): Settings
     }
   }
   return resolveSettings(meta, input);
+}
+
+/**
+ * A fresh look that still belongs to the shader: every colour keeps its own
+ * lightness and most of its saturation (so a dark sky stays dark) while the
+ * whole palette turns around the colour wheel together, with a little
+ * per-colour drift. Scale and intensity land in the middle half of their
+ * ranges, the seed is anything, and the speed is left alone.
+ * `random` returns numbers in [0, 1); pass a seeded one for repeatable results.
+ */
+export function randomizeSettings(
+  meta: ShaderMeta,
+  current: Settings,
+  random: () => number = Math.random,
+): Settings {
+  const turn = random() * 360;
+  const next: Record<string, unknown> = {
+    ...current,
+    colors: meta.colors.default.map((hex) => {
+      const hsl = hexToHsl(hex);
+      return hslToHex({
+        h: hsl.h + turn + (random() - 0.5) * 40,
+        s: hsl.s * (0.8 + random() * 0.2),
+        l: hsl.l,
+      });
+    }),
+  };
+  for (const control of meta.controls) {
+    if (control.type !== "float" || control.key === "speed") continue;
+    if (control.key === "seed") {
+      next.seed = control.min + random() * (control.max - control.min);
+    } else if (control.key === "scale" || control.key === "intensity") {
+      const span = control.max - control.min;
+      next[control.key] = control.min + span * (0.25 + random() * 0.5);
+    }
+  }
+  return resolveSettings(meta, next);
 }

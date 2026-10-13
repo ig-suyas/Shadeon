@@ -13,6 +13,11 @@ export function shaderHref(id: string, code = false): string {
   return code ? `/shaders?s=${id}&code=react` : `/shaders?s=${id}`;
 }
 
+/** The page of one shader, where it can be customized. */
+export function detailHref(id: string, query = ""): string {
+  return `/shaders/${id}${query ? `?${query}` : ""}`;
+}
+
 interface ShaderCardProps {
   shader: ShaderMeta;
   className?: string;
@@ -23,13 +28,21 @@ interface ShaderCardProps {
    * navigating. Modified clicks (new tab, etc.) still follow the link.
    */
   onOpen?: (id: string, withCode: boolean) => void;
+  /** Link to the shader page instead of opening the gallery viewer. */
+  detail?: boolean;
 }
 
 /**
  * A live shader with its name and a Code button directly beneath it. The Code
  * button is always visible: it never depends on hover, so it works on touch.
  */
-export function ShaderCard({ shader, className, surfaceClassName, onOpen }: ShaderCardProps) {
+export function ShaderCard({
+  shader,
+  className,
+  surfaceClassName,
+  onOpen,
+  detail = false,
+}: ShaderCardProps) {
   const intercept =
     (withCode: boolean) =>
     (event: MouseEvent<HTMLAnchorElement>): void => {
@@ -48,7 +61,7 @@ export function ShaderCard({ shader, className, surfaceClassName, onOpen }: Shad
       )}
     >
       <Link
-        href={shaderHref(shader.id)}
+        href={detail ? detailHref(shader.id) : shaderHref(shader.id)}
         onClick={intercept(false)}
         aria-label={`Open ${shader.name}`}
         className="relative flex min-h-0 flex-1 focus-visible:-outline-offset-2"
@@ -61,7 +74,7 @@ export function ShaderCard({ shader, className, surfaceClassName, onOpen }: Shad
           <p className="text-text-faint font-mono text-xs">{shader.category}</p>
         </div>
         <Link
-          href={shaderHref(shader.id, true)}
+          href={detail ? `${detailHref(shader.id)}#code` : shaderHref(shader.id, true)}
           onClick={intercept(true)}
           aria-label={`Get the code for ${shader.name}`}
           data-testid="card-code"

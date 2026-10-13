@@ -114,6 +114,8 @@ test.describe("gallery", () => {
     await page.keyboard.press("ArrowRight");
     await expect(page).not.toHaveURL(/s=mesh-drift/);
     await expect(page).toHaveURL(/[?&]s=/);
+    await expect(dialog.getByRole("heading", { level: 2 })).not.toHaveText("Mesh Drift");
+    await dialog.getByTestId("viewer-code").focus();
     await page.keyboard.press("ArrowLeft");
     await expect(page).toHaveURL(/s=mesh-drift/);
   });
