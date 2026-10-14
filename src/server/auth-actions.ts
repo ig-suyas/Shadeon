@@ -30,7 +30,7 @@ import {
 } from "./accounts";
 import { authEvent } from "./audit";
 import { getDatabase } from "./db/client";
-import { env } from "./env";
+import { emailEnabled, env } from "./env";
 import { clientIp, echo, guard, text, TOO_MANY } from "./form-guard";
 import { verifyGoogleIdToken } from "./google";
 import { logFailure } from "./log";
@@ -75,12 +75,19 @@ function password(form: FormData, key: string): string {
   return typeof value === "string" ? value.slice(0, 1024) : "";
 }
 
+/** Shown when email and password accounts are switched off (no email sending yet). */
+const EMAIL_OFF: FormState = {
+  status: "error",
+  message: "Email sign-in is not available yet. Please continue with Google.",
+};
+
 // ------------------------------------------------------------------ sign-up
 
 const SIGNUP_DONE =
   "Check your inbox. We have sent a link to finish creating your account. It works for 24 hours.";
 
 export async function signUpAction(_previous: FormState, form: FormData): Promise<FormState> {
+  if (!emailEnabled) return EMAIL_OFF;
   const parsed = signUpSchema.safeParse({
     email: text(form, "email"),
     password: password(form, "password"),
@@ -118,6 +125,7 @@ export async function signUpAction(_previous: FormState, form: FormData): Promis
 
 /** Runs from a button press on the page the email link opens, never from opening the link. */
 export async function verifyEmailAction(_previous: FormState, form: FormData): Promise<FormState> {
+  if (!emailEnabled) return EMAIL_OFF;
   const ip = await clientIp();
   if (!(await withinLimit("verify-email", ip ?? "unknown", { max: 20, windowSeconds: 600 }))) {
     return { status: "error", message: TOO_MANY };
@@ -148,6 +156,7 @@ export async function verifyEmailAction(_previous: FormState, form: FormData): P
 // ------------------------------------------------------------------ sign-in
 
 export async function signInAction(_previous: FormState, form: FormData): Promise<FormState> {
+  if (!emailEnabled) return EMAIL_OFF;
   const keys = ["email"];
   const parsed = signInSchema.safeParse({
     email: text(form, "email"),
@@ -261,6 +270,7 @@ const RESET_REQUESTED =
   "If an account uses that address, we have sent it a link to choose a new password. The link works for 30 minutes.";
 
 export async function requestResetAction(_previous: FormState, form: FormData): Promise<FormState> {
+  if (!emailEnabled) return EMAIL_OFF;
   const parsed = forgotPasswordSchema.safeParse({ email: text(form, "email") });
   if (!parsed.success) return invalid(form, ["email"], fieldErrors(parsed.error));
 
@@ -290,6 +300,7 @@ export async function resetPasswordAction(
   _previous: FormState,
   form: FormData,
 ): Promise<FormState> {
+  if (!emailEnabled) return EMAIL_OFF;
   const ip = await clientIp();
   if (!(await withinLimit("reset-password", ip ?? "unknown", { max: 20, windowSeconds: 600 }))) {
     return { status: "error", message: TOO_MANY };
@@ -346,6 +357,8 @@ export async function changePasswordAction(
 ): Promise<FormState> {
   const user = await currentUser();
   if (!user) return { status: "error", message: SIGN_IN_AGAIN, redirectTo: "/login?next=/account" };
+  // A new password is only useful for email sign-in, which needs email sending.
+  if (!emailEnabled && !user.hasPassword) return EMAIL_OFF;
   if (!(await withinLimit("change-password", user.id, { max: 5, windowSeconds: 900 }))) {
     return { status: "error", message: TOO_MANY };
   }

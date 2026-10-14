@@ -5,6 +5,7 @@ import Link from "next/link";
 import { WaitlistForm } from "@/components/forms/forms";
 import { PageShell } from "@/components/layout/page-shell";
 import { button } from "@/components/ui/button";
+import { emailEnabled } from "@/server/env";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -79,11 +80,13 @@ export default function PricingPage() {
             </h2>
             <p className="text-text-muted max-w-[52ch] leading-relaxed">
               Pro is not built yet, and its price has not been set. The plan is a larger set of more
-              elaborate shaders for people who want to support the project. Leave your email and we
-              will tell you once, when it is ready.
+              elaborate shaders for people who want to support the project.{" "}
+              {emailEnabled
+                ? "Leave your email and we will tell you once, when it is ready."
+                : "A waitlist will open here soon."}
             </p>
           </div>
-          <WaitlistForm />
+          {emailEnabled ? <WaitlistForm /> : null}
         </section>
       </div>
     </PageShell>

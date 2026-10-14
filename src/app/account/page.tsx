@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { AccountPanel } from "@/components/auth/account-panel";
 import { PageShell } from "@/components/layout/page-shell";
+import { emailEnabled } from "@/server/env";
 import { currentUser } from "@/server/session";
 
 export const metadata: Metadata = {
@@ -37,6 +38,11 @@ async function Account() {
   if (!user) redirect("/login?next=/account");
   // Only what the page shows: never the password hash or Google id.
   return (
-    <AccountPanel email={user.email} hasPassword={user.hasPassword} hasGoogle={user.hasGoogle} />
+    <AccountPanel
+      email={user.email}
+      hasPassword={user.hasPassword}
+      hasGoogle={user.hasGoogle}
+      emailEnabled={emailEnabled}
+    />
   );
 }

@@ -82,7 +82,23 @@ const ERRORS: Record<string, string> = {
   rate: "Too many attempts. Please wait a few minutes and try again.",
 };
 
-export function SignInForm({ google }: { google: boolean }) {
+interface SignInOptions {
+  /** "Continue with Google" is configured. */
+  google: boolean;
+  /** Email and password accounts are on (the site can send email). */
+  email: boolean;
+}
+
+/** Shown when neither way to sign in is configured. */
+function NoSignIn() {
+  return (
+    <p role="status" className="text-text-muted leading-relaxed">
+      Sign-in is not available right now. Please try again later.
+    </p>
+  );
+}
+
+export function SignInForm({ google, email }: SignInOptions) {
   const [state, action, pending] = useActionState(signInAction, IDLE);
   const next = useNext();
   const error = useSyncExternalStore(subscribeNever, readError, empty);
@@ -106,52 +122,80 @@ export function SignInForm({ google }: { google: boolean }) {
           {ERRORS[error]}
         </p>
       ) : null}
-      {google ? (
+      {google ? <GoogleButton /> : null}
+      {!google && !email ? <NoSignIn /> : null}
+      {google && email ? <Divider /> : null}
+      {email ? (
         <>
-          <GoogleButton />
-          <Divider />
+          <FormFrame state={state} action={action} pending={pending} submitLabel="Sign in">
+            <input type="hidden" name="next" value={next} />
+            <TextField
+              label="Email address"
+              name="email"
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              maxLength={LIMITS.email}
+              placeholder="name@example.com"
+              defaultValue={state.values?.email}
+              error={state.errors?.email}
+            />
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              error={state.errors?.password}
+            />
+            <Link
+              href="/forgot-password"
+              className="text-text-muted hover:text-text -mt-2 self-start text-sm underline underline-offset-4"
+            >
+              Forgot your password?
+            </Link>
+          </FormFrame>
+          <p className="text-text-muted text-sm">
+            New here?{" "}
+            <Link href="/signup" className="text-text underline underline-offset-4">
+              Create a free account
+            </Link>
+          </p>
         </>
+      ) : google ? (
+        <p className="text-text-muted text-sm leading-relaxed">
+          New here? Continuing with Google creates your free account.
+        </p>
       ) : null}
-      <FormFrame state={state} action={action} pending={pending} submitLabel="Sign in">
-        <input type="hidden" name="next" value={next} />
-        <TextField
-          label="Email address"
-          name="email"
-          type="email"
-          autoComplete="email"
-          inputMode="email"
-          maxLength={LIMITS.email}
-          placeholder="name@example.com"
-          defaultValue={state.values?.email}
-          error={state.errors?.email}
-        />
-        <TextField
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          error={state.errors?.password}
-        />
-        <Link
-          href="/forgot-password"
-          className="text-text-muted hover:text-text -mt-2 self-start text-sm underline underline-offset-4"
-        >
-          Forgot your password?
-        </Link>
-      </FormFrame>
-      <p className="text-text-muted text-sm">
-        New here?{" "}
-        <Link href="/signup" className="text-text underline underline-offset-4">
-          Create a free account
-        </Link>
-      </p>
     </div>
   );
 }
 
-export function SignUpForm({ google }: { google: boolean }) {
+export function SignUpForm({ google, email }: SignInOptions) {
   const consentId = useId();
   const [state, action, pending] = useActionState(signUpAction, IDLE);
+  if (!email) {
+    return (
+      <div className="flex flex-col gap-6">
+        {google ? (
+          <>
+            <GoogleButton label="Sign up with Google" />
+            <p className="text-text-muted -mt-3 text-sm leading-relaxed">
+              By continuing with Google you confirm you are {LEGAL.minimumAge} or older and accept
+              the {legal}.
+            </p>
+          </>
+        ) : (
+          <NoSignIn />
+        )}
+        <p className="text-text-muted text-sm">
+          Already have an account?{" "}
+          <Link href="/login" className="text-text underline underline-offset-4">
+            Sign in
+          </Link>
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-6">
       {google && state.status !== "success" ? (

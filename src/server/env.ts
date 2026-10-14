@@ -50,6 +50,15 @@ if (!parsed.success) {
 export const env = parsed.data;
 export const isProduction = env.NODE_ENV === "production";
 
+/**
+ * Email can reach visitors: Resend is configured, or this is development,
+ * where mail goes to the local outbox. Without it (production before a
+ * domain is verified), email and password accounts and the waitlist are off
+ * and "Continue with Google" is the only way in. Adding RESEND_API_KEY and
+ * EMAIL_FROM turns them back on.
+ */
+export const emailEnabled = Boolean(env.RESEND_API_KEY && env.EMAIL_FROM) || !isProduction;
+
 export const integrationStatus = {
   database: Boolean(env.DATABASE_URL),
   rateLimitStore: Boolean(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN),

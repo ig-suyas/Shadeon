@@ -18,6 +18,8 @@ interface AccountPanelProps {
   email: string;
   hasPassword: boolean;
   hasGoogle: boolean;
+  /** Email and password sign-in is on; without it a password cannot be added. */
+  emailEnabled: boolean;
 }
 
 /** Sends the browser to sign-in when an action says the session has ended. */
@@ -36,7 +38,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export function AccountPanel({ email, hasPassword, hasGoogle }: AccountPanelProps) {
+export function AccountPanel({ email, hasPassword, hasGoogle, emailEnabled }: AccountPanelProps) {
   const [leaving, startLeaving] = useTransition();
   const [password, passwordAction, passwordPending] = useActionState(changePasswordAction, IDLE);
   const [deletion, deleteAction, deletePending] = useActionState(deleteAccountAction, IDLE);
@@ -84,47 +86,49 @@ export function AccountPanel({ email, hasPassword, hasGoogle }: AccountPanelProp
         </button>
       </div>
 
-      <Section title={hasPassword ? "Change password" : "Add a password"}>
-        <p className="text-text-muted max-w-[60ch] text-sm leading-relaxed">
-          {hasPassword
-            ? "Changing your password signs you out on every other device."
-            : "Add a password to sign in with your email address as well as Google. For your safety this works within 15 minutes of signing in with Google."}
-        </p>
-        <FormFrame
-          state={password}
-          action={passwordAction}
-          pending={passwordPending}
-          submitLabel={hasPassword ? "Change password" : "Add password"}
-        >
-          {hasPassword ? (
+      {hasPassword || emailEnabled ? (
+        <Section title={hasPassword ? "Change password" : "Add a password"}>
+          <p className="text-text-muted max-w-[60ch] text-sm leading-relaxed">
+            {hasPassword
+              ? "Changing your password signs you out on every other device."
+              : "Add a password to sign in with your email address as well as Google. For your safety this works within 15 minutes of signing in with Google."}
+          </p>
+          <FormFrame
+            state={password}
+            action={passwordAction}
+            pending={passwordPending}
+            submitLabel={hasPassword ? "Change password" : "Add password"}
+          >
+            {hasPassword ? (
+              <TextField
+                label="Current password"
+                name="current"
+                type="password"
+                autoComplete="current-password"
+                error={password.errors?.current}
+              />
+            ) : (
+              <input type="hidden" name="current" value="" />
+            )}
             <TextField
-              label="Current password"
-              name="current"
+              label="New password"
+              name="password"
               type="password"
-              autoComplete="current-password"
-              error={password.errors?.current}
+              autoComplete="new-password"
+              minLength={PASSWORD.minLength}
+              help={`At least ${PASSWORD.minLength} characters.`}
+              error={password.errors?.password}
             />
-          ) : (
-            <input type="hidden" name="current" value="" />
-          )}
-          <TextField
-            label="New password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            minLength={PASSWORD.minLength}
-            help={`At least ${PASSWORD.minLength} characters.`}
-            error={password.errors?.password}
-          />
-          <TextField
-            label="New password again"
-            name="confirm"
-            type="password"
-            autoComplete="new-password"
-            error={password.errors?.confirm}
-          />
-        </FormFrame>
-      </Section>
+            <TextField
+              label="New password again"
+              name="confirm"
+              type="password"
+              autoComplete="new-password"
+              error={password.errors?.confirm}
+            />
+          </FormFrame>
+        </Section>
+      ) : null}
 
       <Section title="Delete account">
         <p className="text-text-muted max-w-[60ch] text-sm leading-relaxed">

@@ -23,10 +23,15 @@ if (!process.env.DATABASE_URL) {
     "DATABASE_URL is not set: accounts (and so the code), the waitlist, request and contact forms will not work.",
   );
 }
-if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
-  blockers.push(
-    "RESEND_API_KEY / EMAIL_FROM are not set: sign-up, password reset and waitlist emails cannot be sent.",
+const emailOn = Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+if (!emailOn) {
+  // Allowed (owner, 2026-10-14: no domain yet): the site runs Google-only.
+  warnings.push(
+    "RESEND_API_KEY / EMAIL_FROM are not set: email and password accounts and the waitlist are off; Google is the only sign-in.",
   );
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    blockers.push("Neither email (Resend) nor GOOGLE_CLIENT_ID is set: nobody could sign in.");
+  }
 }
 if (!process.env.CRON_SECRET) {
   blockers.push("CRON_SECRET is not set: the daily retention job will not run.");

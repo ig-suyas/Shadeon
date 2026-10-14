@@ -9,6 +9,7 @@ import {
   type FormState,
 } from "@/lib/forms";
 import { getDatabase, type Database } from "./db/client";
+import { emailEnabled } from "./env";
 import { clientIp, echo, guard, text, TOO_MANY } from "./form-guard";
 import { logFailure } from "./log";
 import { sendWaitlistConfirmation } from "./mail";
@@ -47,6 +48,8 @@ const WAITLIST_DONE =
   "Check your inbox. If that address is not on the list yet, a confirmation link is on its way.";
 
 export async function joinWaitlistAction(_previous: FormState, form: FormData): Promise<FormState> {
+  // Joining sends a confirmation email; without email sending it cannot work.
+  if (!emailEnabled) return { status: "error", message: "The waitlist is not open yet." };
   const keys = ["email"];
   const parsed = waitlistSchema.safeParse({
     email: text(form, "email"),

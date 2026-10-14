@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SignInForm } from "@/components/auth/auth-forms";
 import { PageShell } from "@/components/layout/page-shell";
-import { integrationStatus } from "@/server/env";
+import { emailEnabled, integrationStatus } from "@/server/env";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -16,7 +16,7 @@ export default function LoginPage() {
       lead="Every shader is free to explore. Sign in to copy its React, JavaScript or GLSL code."
     >
       <div className="max-w-[420px]">
-        <SignInForm google={integrationStatus.google} />
+        <SignInForm google={integrationStatus.google} email={emailEnabled} />
       </div>
     </PageShell>
   );
