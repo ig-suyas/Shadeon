@@ -5,7 +5,7 @@ export const meta: ShaderMeta = {
   id: "frosted-pane",
   name: "Frosted Pane",
   description:
-    "Soft colour moving behind frosted glass. The frost scatters the scene into a fine speckle, and a faint sheen crosses the pane.",
+    "Soft colour moving behind frosted glass. The frost softens the scene into a fine-grained blur, and a faint sheen crosses the pane.",
   category: "glass",
   tags: ["glass", "frosted", "blur", "soft", "premium", "hero"],
   colors: {

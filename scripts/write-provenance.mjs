@@ -271,7 +271,7 @@ const NOTES = {
     name: "Pointer Glow",
     written: "2026-10-14",
     techniques: [
-      "Height field from two octaves of value noise; surface normal by finite differences.",
+      "Height field from rotated sine ridges bent by low-frequency value noise (domain warping); surface normal by finite differences.",
       "A point light at the pointer just above the surface: Lambert shading with inverse-square falloff.",
       "A Gaussian core for the lamp itself.",
     ],
@@ -282,7 +282,7 @@ const NOTES = {
     written: "2026-10-14",
     techniques: [
       "The shared soft scene (distance-weighted colour anchors) as the view behind the glass.",
-      "Frost as scattering: the lookup position is displaced by a fine two-channel value-noise field.",
+      "Frost as scattering: the lookup position is displaced by a fine two-channel value-noise field, and three displaced lookups are averaged into a soft blur.",
       "A Gaussian sheen band across the pane and per-pixel hash grain.",
     ],
     chunks: "HEADER, HASH, NOISE, SEED, SOFT_SCENE",

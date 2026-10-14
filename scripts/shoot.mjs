@@ -23,7 +23,16 @@ await page.waitForSelector("[data-testid=review-sheet] [data-shader]");
 // Bring every tile into view once so each one loads, then wait for all to go live.
 const tiles = page.locator("[data-testid=review-sheet] [data-shader]");
 const count = await tiles.count();
-for (let i = 0; i < count; i++) await tiles.nth(i).scrollIntoViewIfNeeded();
+// Scroll from inside the page: the sheet can re-render after hydration, which
+// detaches element handles held by Playwright.
+for (let i = 0; i < count; i++) {
+  await page.evaluate((index) => {
+    document
+      .querySelectorAll("[data-testid=review-sheet] [data-shader]")
+      [index]?.scrollIntoView({ block: "center" });
+  }, i);
+  await page.waitForTimeout(50);
+}
 await page.waitForFunction(
   () =>
     [...document.querySelectorAll("[data-testid=review-sheet] [data-shader]")].every(

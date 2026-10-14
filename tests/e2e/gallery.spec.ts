@@ -158,7 +158,10 @@ test.describe("gallery", () => {
       .getByRole("button", { name: "lines" })
       .click();
     await expect(page).toHaveURL(/cat=lines/);
-    await expect(cards.first()).toHaveAttribute("data-card", "contour-field");
+    // Order follows DISPLAY_ORDER, which changes as shaders are added, so check
+    // membership rather than position.
+    await expect(page.locator('[data-card="contour-field"]')).toHaveCount(1);
+    await expect(page.locator('[data-card="aurora-veil"]')).toHaveCount(0);
 
     await page.getByRole("searchbox", { name: "Search shaders" }).fill("zzzz-no-match");
     await expect(

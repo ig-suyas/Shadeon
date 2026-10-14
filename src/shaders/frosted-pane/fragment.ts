@@ -19,9 +19,17 @@ void main() {
 
   // Frosted glass scatters light: every point shows the scene from a slightly
   // different place. A fine noise field decides where.
+  // Three scattered looks are averaged, which is what the eye sees through
+  // frost: a soft blur with a fine texture, not a sprayed edge.
   vec2 grain = gl_FragCoord.xy / u_resolution.y * u_frost;
-  vec2 scatter = vec2(noise(grain), noise(grain + 31.7)) - 0.5;
-  vec3 color = softScene(uv + scatter * 0.07 * u_intensity, t);
+  float reach = 0.04 * u_intensity;
+  vec3 color = vec3(0.0);
+  for (int i = 0; i < 3; i++) {
+    vec2 g = grain + float(i) * vec2(17.3, 29.1);
+    vec2 scatter = vec2(noise(g), noise(g + 31.7)) - 0.5;
+    color += softScene(uv + scatter * reach, t);
+  }
+  color /= 3.0;
 
   // A soft diagonal sheen where the pane catches the room light.
   float band = uv.x + uv.y * 0.6 - 0.75 - 0.15 * sin(t * 0.8);
