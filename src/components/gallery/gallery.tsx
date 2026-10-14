@@ -64,6 +64,15 @@ export function Gallery({ shaders }: { shaders: readonly ShaderMeta[] }) {
     [],
   );
 
+  // Text typed into the server-rendered box before the page became interactive
+  // stays in the box, but no change event ever reached React. Apply it once on
+  // mount, so the grid matches what the box says (found by the WebKit run).
+  useEffect(() => {
+    const typed = searchRef.current?.value ?? "";
+    const inUrl = parseGalleryParams(new URLSearchParams(location.search)).q;
+    if (typed !== inUrl) navigate({ q: typed });
+  }, [navigate]);
+
   // Keep the search box in step with the URL (back button, cleared filters)
   // without fighting the user while they type.
   useEffect(() => {

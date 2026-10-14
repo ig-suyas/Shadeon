@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { ExportResult } from "@/export/generate";
 import { EXPORT_TARGETS, TARGET_LABELS, type ExportTarget } from "@/export/targets";
@@ -55,15 +55,40 @@ function useExports(shader: ShaderMeta, settingsKey: string): Exports | "error" 
   return state?.key === key ? state.value : null;
 }
 
-/** Highlights code off the main render path; until it is ready the caller shows plain text. */
-function useHighlighted(result: ExportResult | null): string | null {
+/** True once the element has come within about a screen of the viewport. Stays true. */
+function useNearViewport(ref: RefObject<HTMLElement | null>): boolean {
+  // Without IntersectionObserver there is no way to wait, so start at once.
+  const [near, setNear] = useState(() => typeof IntersectionObserver === "undefined");
+
+  useEffect(() => {
+    const element = ref.current;
+    if (near || !element) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setNear(true);
+      },
+      { rootMargin: "100% 0px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref, near]);
+
+  return near;
+}
+
+/**
+ * Highlights code in a worker, and only once the panel is close to being
+ * seen, so a shader page does not spend its first seconds on code below the
+ * fold. Until the highlighted HTML is ready the caller shows plain text.
+ */
+function useHighlighted(result: ExportResult | null, enabled: boolean): string | null {
   const [state, setState] = useState<{ code: string; html: string } | null>(null);
 
   useEffect(() => {
-    if (!result) return;
+    if (!result || !enabled) return;
     let cancelled = false;
-    void import("@/lib/highlight")
-      .then(({ highlight }) => highlight(result.code, result.language))
+    void import("@/lib/highlight-client")
+      .then(({ highlightOffThread }) => highlightOffThread(result.code, result.language))
       .then((html) => {
         if (!cancelled) setState({ code: result.code, html });
       })
@@ -73,7 +98,7 @@ function useHighlighted(result: ExportResult | null): string | null {
     return () => {
       cancelled = true;
     };
-  }, [result]);
+  }, [result, enabled]);
 
   return result && state?.code === result.code ? state.html : null;
 }
@@ -85,9 +110,11 @@ function useHighlighted(result: ExportResult | null): string | null {
 export function CodePanel({ shader, settings, target, onTargetChange, className }: CodePanelProps) {
   const id = useId();
   const tabs = useRef<Map<ExportTarget, HTMLButtonElement>>(new Map());
+  const root = useRef<HTMLDivElement>(null);
+  const near = useNearViewport(root);
   const exports = useExports(shader, settings ? JSON.stringify(settings) : "");
   const result = exports && exports !== "error" ? exports[target] : null;
-  const html = useHighlighted(result);
+  const html = useHighlighted(result, near);
   const install = `npx shadcn@latest add ${SITE_URL}/r/${shader.id}.json`;
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -108,7 +135,11 @@ export function CodePanel({ shader, settings, target, onTargetChange, className 
   };
 
   return (
-    <div className={cn("flex min-h-0 min-w-0 flex-col", className)} data-testid="code-panel">
+    <div
+      ref={root}
+      className={cn("flex min-h-0 min-w-0 flex-col", className)}
+      data-testid="code-panel"
+    >
       <div className="border-line flex items-center justify-between gap-3 border-b px-3 py-2.5">
         <div
           role="tablist"

@@ -30,6 +30,16 @@ export default defineConfig({
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
+    // Firefox and WebKit (Safari's engine) run when E2E_ALL_BROWSERS=1. They
+    // need `npx playwright install firefox webkit` first. Clipboard permissions
+    // are Chromium-only, so copy tests read the confirmation, not the clipboard.
+    ...(process.env.E2E_ALL_BROWSERS === "1"
+      ? [
+          { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+          { name: "webkit", use: { ...devices["Desktop Safari"] } },
+          { name: "mobile-safari", use: { ...devices["iPhone 13"] } },
+        ]
+      : []),
   ],
   // Locally this reuses a dev server that is already running. CI builds and serves production.
   webServer: {

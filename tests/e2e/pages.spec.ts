@@ -1,3 +1,4 @@
+import { readCopied, recordClipboard } from "./clipboard";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -51,11 +52,12 @@ test.describe("supporting pages", () => {
     await expect(page.locator("main").getByRole("link", { name: "Browse shaders" })).toBeVisible();
   });
 
-  test("docs code samples are highlighted and copyable", async ({ page }) => {
+  test("docs code samples are highlighted and copyable", async ({ page, browserName }) => {
+    await recordClipboard(page, browserName);
     await page.goto("/docs");
     await expect(page.locator(".shiki").first()).toBeVisible();
     await page.getByRole("button", { name: "Copy Terminal" }).click();
-    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    const copied = await readCopied(page, browserName);
     expect(copied).toMatch(/^npx shadcn@latest add https?:\/\/.+\/r\/mesh-drift\.json$/);
   });
 });

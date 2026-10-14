@@ -1,3 +1,4 @@
+import { readCopied, recordClipboard } from "./clipboard";
 import { expect, test, type Page } from "@playwright/test";
 import { shaders } from "../../src/shaders/registry";
 
@@ -22,7 +23,8 @@ test.describe("gallery", () => {
     }
   });
 
-  test("open a shader, open its code, switch tabs, copy", async ({ page }) => {
+  test("open a shader, open its code, switch tabs, copy", async ({ page, browserName }) => {
+    await recordClipboard(page, browserName);
     await openGallery(page);
     await page.getByRole("link", { name: "Open Mesh Drift" }).click();
 
@@ -51,7 +53,7 @@ test.describe("gallery", () => {
 
     await panel.getByRole("button", { name: "Copy code" }).click();
     await expect(panel.getByRole("status").first()).toHaveText("Copied to clipboard");
-    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    const copied = await readCopied(page, browserName);
     expect(copied).toContain("const fragment = `");
     expect(copied).toContain("function mountShader(");
     // What was copied is exactly what the panel shows.
@@ -218,11 +220,15 @@ test.describe("landing", () => {
     await expect(copy).toBeInViewport();
   });
 
-  test("Copy a shader puts a complete React component on the clipboard", async ({ page }) => {
+  test("Copy a shader puts a complete React component on the clipboard", async ({
+    page,
+    browserName,
+  }) => {
+    await recordClipboard(page, browserName);
     await page.goto("/");
     await page.getByRole("button", { name: "Copy a shader" }).click();
     await expect(page.getByRole("status").first()).toHaveText("Copied to clipboard");
-    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    const copied = await readCopied(page, browserName);
     expect(copied).toContain('"use client";');
     expect(copied).toContain("export function MeshDrift");
   });

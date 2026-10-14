@@ -50,4 +50,4 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
 
       # The generated catalog must match what is committed.
-      - run: git diff --exit-code -- src/shaders/registry.ts src/shaders/loaders.ts
+      - run: git diff --exit-code -- src/shaders/registry.ts src/shaders/loaders.ts src/shaders/ids.ts

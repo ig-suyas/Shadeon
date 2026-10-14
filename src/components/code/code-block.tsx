@@ -1,6 +1,7 @@
 import { createHighlighterCore, type HighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import { CopyButton } from "@/components/ui/copy-button";
+import { fixContrast } from "@/lib/highlight";
 
 type DocLanguage = "tsx" | "html" | "bash" | "javascript";
 
@@ -28,11 +29,13 @@ function getHighlighter(): Promise<HighlighterCore> {
 async function highlightDoc(code: string, lang: DocLanguage): Promise<string> {
   "use cache";
   const instance = await getHighlighter();
-  return instance.codeToHtml(code, {
-    lang,
-    themes: { light: "github-light", dark: "github-dark" },
-    defaultColor: false,
-  });
+  return fixContrast(
+    instance.codeToHtml(code, {
+      lang,
+      themes: { light: "github-light", dark: "github-dark" },
+      defaultColor: false,
+    }),
+  );
 }
 
 interface CodeBlockProps {

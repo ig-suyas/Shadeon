@@ -30,6 +30,8 @@ interface ShaderCardProps {
   onOpen?: (id: string, withCode: boolean) => void;
   /** Link to the shader page instead of opening the gallery viewer. */
   detail?: boolean;
+  /** Heading level of the name: one below the section the card sits in. */
+  headingLevel?: 2 | 3;
 }
 
 /**
@@ -42,7 +44,9 @@ export function ShaderCard({
   surfaceClassName,
   onOpen,
   detail = false,
+  headingLevel = 3,
 }: ShaderCardProps) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   const intercept =
     (withCode: boolean) =>
     (event: MouseEvent<HTMLAnchorElement>): void => {
@@ -70,7 +74,7 @@ export function ShaderCard({
       </Link>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
-          <h3 className="truncate text-[15px] font-medium">{shader.name}</h3>
+          <Heading className="truncate text-[15px] font-medium">{shader.name}</Heading>
           <p className="text-text-faint font-mono text-xs">{shader.category}</p>
         </div>
         <Link

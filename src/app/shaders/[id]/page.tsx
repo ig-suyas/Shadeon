@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { Workbench } from "@/components/detail/workbench";
 import { ShaderCard } from "@/components/shader/shader-card";
 import { componentName } from "@/export/naming";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getShader, shaders } from "@/shaders/registry";
 import { COST_LABELS, relatedShaders } from "@/shaders/related";
 import type { ShaderMeta } from "@/shaders/schema";
@@ -116,6 +117,28 @@ function usageNotes(shader: ShaderMeta): { title: string; body: string }[] {
 
 type Params = PageProps<"/shaders/[id]">["params"];
 
+/** schema.org description of the shader as source code, for search engines. */
+function structuredData(shader: ShaderMeta): string {
+  const url = `${SITE_URL}/shaders/${shader.id}`;
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    name: `${shader.name} shader`,
+    description: shader.description,
+    url,
+    image: `${url}/opengraph-image`,
+    programmingLanguage: ["GLSL", "TypeScript", "JavaScript"],
+    runtimePlatform: "WebGL",
+    license: "https://opensource.org/licenses/MIT",
+    version: shader.version,
+    dateCreated: shader.addedAt,
+    keywords: shader.tags.join(", "),
+    isAccessibleForFree: true,
+    publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+  };
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
 /**
  * The page frame renders at once; everything that depends on the id sits in a
  * Suspense boundary, so in-app navigation to a shader is instant. Every id is
@@ -163,6 +186,11 @@ async function ShaderDetail({ params }: { params: Params }) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        // JSON-LD is data, not script; "<" is escaped so no value can close the tag.
+        dangerouslySetInnerHTML={{ __html: structuredData(shader) }}
+      />
       <div className="mt-5 mb-8 flex flex-col gap-3">
         <h1 className="text-4xl font-semibold tracking-tighter md:text-5xl">{shader.name}</h1>
         <p className="text-text-muted max-w-[60ch] text-lg leading-relaxed">{shader.description}</p>
@@ -195,7 +223,20 @@ async function ShaderDetail({ params }: { params: Params }) {
           Props of the {name} React component. The JavaScript version takes the same names in its
           settings object.
         </p>
-        <div className="border-line rounded-card mt-5 overflow-x-auto border">
+        {/* Phones get a stacked list; a four-column table would scroll sideways. */}
+        <dl className="border-line rounded-card divide-line mt-5 divide-y border md:hidden">
+          {propRows(shader).map((row) => (
+            <div key={row.name} className="flex flex-col gap-1.5 px-4 py-3">
+              <dt className="font-mono text-[13px]">{row.name}</dt>
+              <dd className="text-text-muted font-mono text-xs break-words">
+                {row.type}
+                {row.fallback ? <>, default {row.fallback}</> : null}
+              </dd>
+              <dd className="text-text-muted text-sm leading-relaxed">{row.description}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="border-line rounded-card mt-5 overflow-x-auto border max-md:hidden">
           <table className="w-full min-w-[640px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-line text-text-muted border-b">

@@ -19,6 +19,9 @@ const code = Geist_Mono({
   variable: "--font-code",
   subsets: ["latin"],
   display: "swap",
+  // Code and readouts sit below the fold; do not let this font compete with
+  // the headline font for bandwidth during the first paint.
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -26,6 +29,8 @@ export const metadata: Metadata = {
   title: { default: "Shadeon", template: "%s · Shadeon" },
   description:
     "A free library of original animated shaders with copy-ready React, JavaScript and GLSL code.",
+  openGraph: { siteName: "Shadeon", type: "website", locale: "en" },
+  twitter: { card: "summary_large_image" },
 };
 
 // Upper bound, in seconds, for any server work under this layout, including
@@ -60,7 +65,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         {children}
         <SiteFooter />
-        <SiteAnalytics />
+        {/* Vercel serves the analytics script only on its own deployments
+            (it sets VERCEL=1 there); elsewhere the tag would just 404. */}
+        {process.env.VERCEL === "1" ? <SiteAnalytics /> : null}
       </body>
     </html>
   );
