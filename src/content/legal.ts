@@ -17,7 +17,8 @@ export const LEGAL = {
    * data, in days: deleted accounts stay in backups until then. Depends on the
    * Neon plan; set it to the configured window.
    */
-  backupRetentionDays: "[backup window in days]",
+  // Neon Free keeps 6 hours of history (checked 2026-10-14), so within a day.
+  backupRetentionDays: "1",
   /** Minimum age to use the forms and to hold an account. */
   minimumAge: 18,
   /** ISO date these texts last changed. */

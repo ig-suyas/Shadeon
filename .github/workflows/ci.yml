@@ -41,6 +41,9 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
 
       - run: npm run gen:catalog
+      # Route types (PageProps, LayoutProps) live in .next/types; a fresh
+      # checkout has none until they are generated.
+      - run: npx next typegen
       - run: npx tsc --noEmit
       - run: npx eslint .
       - run: npx prettier --check .

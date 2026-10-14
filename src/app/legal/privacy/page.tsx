@@ -168,8 +168,9 @@ export default function PrivacyPage() {
 
       <p>
         Our database provider keeps short-term backups so the site can recover from a failure.
-        Deleted data disappears from them when they expire, within {LEGAL.backupRetentionDays} days,
-        and is not used for anything in the meantime.
+        Deleted data disappears from them when they expire, within {LEGAL.backupRetentionDays}{" "}
+        {LEGAL.backupRetentionDays === "1" ? "day" : "days"}, and is not used for anything in the
+        meantime.
       </p>
 
       <h2>Who processes data for us</h2>
