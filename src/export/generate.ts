@@ -35,10 +35,6 @@ export function shaderUrl(meta: ShaderMeta): string {
   return `${SITE_URL}/shaders/${meta.id}`;
 }
 
-export function installCommand(meta: ShaderMeta): string {
-  return `npx shadcn@latest add ${SITE_URL}/r/${meta.id}.json`;
-}
-
 function templateLiteral(source: string): string {
   return "`" + source.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${") + "`";
 }

@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import type { z } from "zod";
 import {
   contactSchema,
@@ -10,6 +9,7 @@ import {
   type FormState,
 } from "@/lib/forms";
 import { getDatabase, type Database } from "./db/client";
+import { clientIp, echo, guard, text, TOO_MANY } from "./form-guard";
 import { logFailure } from "./log";
 import { sendWaitlistConfirmation } from "./mail";
 import { withinLimit } from "./rate-limit";
@@ -22,11 +22,8 @@ import {
   purgeExpired,
 } from "./repository";
 import { isTokenShaped } from "./tokens";
-import { verifyTurnstile } from "./turnstile";
 
 const UNAVAILABLE = "This form is not available right now. Please try again later.";
-const TOO_MANY = "Too many attempts. Please wait a few minutes and try again.";
-const CHECK_FAILED = "We could not confirm you are human. Reload the page and try again.";
 
 /** Retention is enforced here, after writes, so no scheduled job is needed. A failure never blocks the form. */
 async function tidy(db: Database): Promise<void> {
@@ -35,51 +32,6 @@ async function tidy(db: Database): Promise<void> {
   } catch (error) {
     logFailure("retention purge", error);
   }
-}
-
-/** Humans take longer than this to fill a form; many bots do not. */
-const MIN_FILL_MS = 1500;
-
-async function clientIp(): Promise<string | null> {
-  const list = await headers();
-  // The first entry is set by the hosting platform's proxy.
-  const forwarded = list.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || list.get("x-real-ip") || null;
-}
-
-function text(form: FormData, key: string): string {
-  const value = form.get(key);
-  return typeof value === "string" ? value.slice(0, 5000) : "";
-}
-
-/** Text the user typed, echoed back after an error so the form keeps it. */
-function echo(form: FormData, keys: string[]): Record<string, string> {
-  return Object.fromEntries(keys.map((key) => [key, text(form, key)]));
-}
-
-/**
- * Shared gate for every form: honeypot, minimum fill time, per-IP rate limit,
- * Turnstile. Returns an error state to send back, "silent" when the request
- * should be dropped while appearing to succeed, or null when it may proceed.
- */
-async function guard(
-  form: FormData,
-  scope: string,
-  limit: { max: number; windowSeconds: number },
-): Promise<FormState | "silent" | null> {
-  // "website" is hidden from people; only automated fillers complete it.
-  if (text(form, "website") !== "") return "silent";
-  const elapsed = Number(text(form, "elapsed"));
-  if (Number.isFinite(elapsed) && elapsed > 0 && elapsed < MIN_FILL_MS) return "silent";
-
-  const ip = await clientIp();
-  if (!(await withinLimit(scope, ip ?? "unknown", limit))) {
-    return { status: "error", message: TOO_MANY };
-  }
-  if (!(await verifyTurnstile(form.get("cf-turnstile-response"), ip))) {
-    return { status: "error", message: CHECK_FAILED };
-  }
-  return null;
 }
 
 function invalid<T>(form: FormData, keys: string[], result: z.ZodSafeParseError<T>): FormState {

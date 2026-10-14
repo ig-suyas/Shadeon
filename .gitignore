@@ -45,6 +45,7 @@ next-env.d.ts
 
 # playwright
 /test-results/
+/tests/e2e/.auth/
 /playwright-report/
 
 # local development database

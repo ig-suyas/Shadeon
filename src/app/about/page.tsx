@@ -44,8 +44,8 @@ export default function AboutPage() {
             reduced motion, and lower their own resolution on slow devices.
           </li>
           <li>
-            <strong>Little data.</strong> No account, no advertising, no tracking cookies. The site
-            stores an email address only if you give it one.
+            <strong>Little data.</strong> No advertising, no tracking cookies. A free account,
+            needed only to copy code, holds just your email address.
           </li>
         </ul>
 

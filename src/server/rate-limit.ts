@@ -70,7 +70,10 @@ function createUpstashStore(url: string, token: string): RateStore {
   };
 }
 
-const memory = createMemoryStore();
+// One counter set per process (Next.js loads actions and routes as separate
+// module instances; a per-module store would split every limit between them).
+const shared = globalThis as typeof globalThis & { __shadeonRateMemory?: RateStore };
+const memory = (shared.__shadeonRateMemory ??= createMemoryStore());
 const remote =
   env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN
     ? createUpstashStore(env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN)

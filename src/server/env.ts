@@ -22,6 +22,16 @@ const schema = z.object({
   EMAIL_FROM: z.string().min(3).optional(),
   /** Shared secret for the daily retention job. Vercel Cron sends it as a bearer token. */
   CRON_SECRET: z.string().min(16).optional(),
+  /**
+   * Google OAuth client id for "Continue with Google". It is public by design
+   * (Google shows it to the visitor during sign-in); no client secret is used.
+   */
+  GOOGLE_CLIENT_ID: z
+    .string()
+    .regex(/^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$/)
+    .optional(),
+  /** Signs short-lived install links for the shadcn registry. 32+ random characters. */
+  AUTH_SECRET: z.string().min(32).optional(),
 });
 
 function emptyToUndefined(source: NodeJS.ProcessEnv): Record<string, string | undefined> {
@@ -45,4 +55,5 @@ export const integrationStatus = {
   rateLimitStore: Boolean(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN),
   turnstile: Boolean(env.TURNSTILE_SECRET_KEY),
   email: Boolean(env.RESEND_API_KEY && env.EMAIL_FROM),
+  google: Boolean(env.GOOGLE_CLIENT_ID),
 };

@@ -30,6 +30,8 @@ export interface FormState {
   errors?: Record<string, string>;
   /** Echo of text fields so nothing typed is lost after a failed submit. Never includes secrets. */
   values?: Record<string, string>;
+  /** After a successful sign-in: where the browser should go next (always a path on this site). */
+  redirectTo?: string;
 }
 
 export const IDLE: FormState = { status: "idle" };

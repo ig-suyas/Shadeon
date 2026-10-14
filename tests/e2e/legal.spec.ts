@@ -44,11 +44,24 @@ test.describe("legal pages", () => {
     await expect(main).toContainText("We do not store IP addresses in our database.");
   });
 
-  test("the site sets no cookies of its own", async ({ page, context }) => {
-    for (const path of ["/", "/shaders", "/pricing", "/legal/cookies"]) {
-      await page.goto(path);
-    }
-    expect(await context.cookies()).toEqual([]);
+  test.describe("cookies", () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
+
+    test("browsing sets no cookies", async ({ page, context }) => {
+      for (const path of ["/", "/shaders", "/shaders/mesh-drift", "/pricing", "/legal/cookies"]) {
+        await page.goto(path);
+      }
+      expect(await context.cookies()).toEqual([]);
+    });
+  });
+
+  test("signing in sets only the session cookie, HttpOnly and SameSite=Lax", async ({
+    context,
+  }) => {
+    // The project's signed-in state comes from tests/e2e/auth.setup.ts.
+    const cookies = await context.cookies();
+    expect(cookies.map((cookie) => cookie.name)).toEqual(["shadeon_session"]);
+    expect(cookies[0]).toMatchObject({ httpOnly: true, sameSite: "Lax", path: "/" });
   });
 
   test("forms link to the privacy policy", async ({ page }) => {

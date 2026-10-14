@@ -54,4 +54,78 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const schema = { waitlist, shaderRequests, messages };
+/**
+ * Accounts. A row exists only once the person has proved they own the email
+ * address: by the link in the sign-up email, or by Google vouching for it.
+ * There is no name, no profile and no IP address.
+ */
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Lower-cased and trimmed. */
+    email: text("email").notNull(),
+    /** bcrypt (cost 12). Null for accounts that only sign in with Google. */
+    passwordHash: text("password_hash"),
+    /** Google's stable account id ("sub"). Null until the account signs in with Google. */
+    googleSub: text("google_sub"),
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }).notNull(),
+    /** Which version of the Terms and Privacy Policy the person accepted, and when. */
+    termsVersion: text("terms_version").notNull(),
+    termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("users_email_unique").on(table.email),
+    uniqueIndex("users_google_sub_unique").on(table.googleSub),
+  ],
+);
+
+/**
+ * Signed-in browsers. The id is the SHA-256 of the cookie's random token, so a
+ * copy of this table cannot be used to sign in.
+ */
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("sessions_user_idx").on(table.userId),
+    index("sessions_expires_idx").on(table.expiresAt),
+  ],
+);
+
+/**
+ * One-time links sent by email. Only the SHA-256 of the token is stored.
+ * - "signup": a pending account (email + bcrypt hash). The users row is
+ *   created when the link is used, so unconfirmed sign-ups never become accounts.
+ * - "reset": a password reset for an existing account.
+ */
+export const authTokens = pgTable(
+  "auth_tokens",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    purpose: text("purpose", { enum: ["signup", "reset"] }).notNull(),
+    /** Lower-cased. For "signup" the address being registered; for "reset" the account's. */
+    email: text("email").notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    passwordHash: text("password_hash"),
+    termsVersion: text("terms_version"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("auth_tokens_email_idx").on(table.email),
+    index("auth_tokens_user_idx").on(table.userId),
+    index("auth_tokens_expires_idx").on(table.expiresAt),
+  ],
+);
+
+export const schema = { waitlist, shaderRequests, messages, users, sessions, authTokens };

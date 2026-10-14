@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactAddress, LegalPage } from "@/components/layout/legal-page";
 import { LEGAL, RETENTION } from "@/content/legal";
+import { PASSWORD } from "@/lib/auth-types";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
@@ -14,7 +15,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy policy"
-      lead="Shadeon is built to need very little about you. There are no accounts, no advertising and no tracking cookies. This page lists everything that is collected."
+      lead="Shadeon is built to need very little about you. An account holds only your email address, and there is no advertising and no tracking. This page lists everything that is collected."
     >
       <h2>Who is responsible</h2>
       <p>
@@ -47,6 +48,47 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
+      <h3>If you create an account</h3>
+      <p>
+        You can explore every shader without an account. To see and copy the code you need a free
+        account, which you can create with an email address and password, or with Google.
+      </p>
+      <ul>
+        <li>
+          <strong>Your email address</strong>, to identify your account, to sign you in, and to send
+          you the emails the account needs (confirming your address, resetting your password). We do
+          not send newsletters or marketing to account holders.
+        </li>
+        <li>
+          <strong>Your password, only in scrambled form.</strong> We store a bcrypt hash of it, from
+          which the password cannot be read back. Nobody at Shadeon can see your password.
+        </li>
+        <li>
+          <strong>If you use Google:</strong> Google tells us your email address, that Google has
+          verified it, and a number that identifies your Google account to us. We ask Google for
+          nothing else: not your name, photo or contacts.
+        </li>
+        <li>
+          <strong>Sign-in sessions.</strong> When you sign in we store a scrambled copy of a random
+          session key, with when it was created and when it expires, so we know the browser holding
+          the matching cookie is you.
+        </li>
+        <li>
+          <strong>Your acceptance of the terms:</strong> which version of the Terms of use and this
+          policy you accepted, and when.
+        </li>
+        <li>
+          <strong>One-time email links</strong> (to confirm your address or reset your password),
+          stored only in scrambled form. A sign-up that is never confirmed keeps your address and
+          password hash only inside its link record, which expires after 24 hours; no account is
+          created.
+        </li>
+      </ul>
+      <p>
+        We use this to provide the account you asked for and to keep it secure. We do not use it for
+        anything else.
+      </p>
+
       <h3>If you join the Pro waitlist</h3>
       <ul>
         <li>
@@ -74,9 +116,10 @@ export default function PrivacyPage() {
       <h3>To protect the forms from abuse</h3>
       <ul>
         <li>
-          When you submit a form, we count submissions per network address and, for the waitlist,
-          per email address, for a short time. The counters are keyed by a scrambled (hashed)
-          version of the address, not the address itself, and expire within an hour.
+          When you submit a form or try to sign in, we count attempts per network address and, for
+          the waitlist and accounts, per email address or account, for a short time. The counters
+          are keyed by a scrambled (hashed) version of the address, not the address itself, and
+          expire within an hour.
         </li>
         <li>
           Forms may include a check by Cloudflare Turnstile to tell people from automated
@@ -90,7 +133,7 @@ export default function PrivacyPage() {
         <li>We do not store IP addresses in our database.</li>
         <li>We do not use advertising or cross-site tracking.</li>
         <li>We do not sell personal data or share it for marketing.</li>
-        <li>We do not ask for your name, and there are no user accounts.</li>
+        <li>We do not ask for your name. An account holds only what is listed above.</li>
       </ul>
 
       <h2>How long we keep it</h2>
@@ -108,9 +151,26 @@ export default function PrivacyPage() {
           months.
         </li>
         <li>
+          <strong>Account:</strong> until you delete it. Deleting it on your account page removes
+          the account, its password hash, its Google link, its sessions and its email links at once.
+        </li>
+        <li>
+          <strong>Sign-in sessions:</strong> until you sign out, or at most 30 days.
+        </li>
+        <li>
+          <strong>Unconfirmed sign-ups:</strong> the link record expires after 24 hours and is
+          deleted within a day after that. Password reset links expire after 30 minutes.
+        </li>
+        <li>
           <strong>Abuse counters:</strong> up to one hour.
         </li>
       </ul>
+
+      <p>
+        Our database provider keeps short-term backups so the site can recover from a failure.
+        Deleted data disappears from them when they expire, within {LEGAL.backupRetentionDays} days,
+        and is not used for anything in the meantime.
+      </p>
 
       <h2>Who processes data for us</h2>
       <p>
@@ -122,10 +182,12 @@ export default function PrivacyPage() {
           <strong>Vercel</strong>: website hosting and page statistics.
         </li>
         <li>
-          <strong>Neon</strong>: the database that holds waitlist addresses, requests and messages.
+          <strong>Neon</strong>: the database that holds accounts, waitlist addresses, requests and
+          messages.
         </li>
         <li>
-          <strong>Resend</strong>: sending the waitlist confirmation and announcement emails.
+          <strong>Resend</strong>: sending account emails (confirmations and password resets) and
+          the waitlist emails.
         </li>
         <li>
           <strong>Upstash</strong>: the short-lived abuse counters.
@@ -134,6 +196,11 @@ export default function PrivacyPage() {
           <strong>Cloudflare</strong>: the Turnstile check on forms, when active.
         </li>
       </ul>
+      <p>
+        If you choose <strong>Continue with Google</strong>, you sign in on Google&apos;s own pages,
+        and Google handles that under its own privacy policy. Google then tells us only what is
+        listed above.
+      </p>
       <p>
         These providers may process data in countries other than your own, including the United
         States.
@@ -144,6 +211,10 @@ export default function PrivacyPage() {
         <li>
           <strong>Leave the waitlist</strong> at any time with the link in any email we send you.
           Your address is deleted, not just switched off.
+        </li>
+        <li>
+          <strong>Delete your account</strong> yourself at any time on your{" "}
+          <Link href="/account">account page</Link>. It takes effect at once.
         </li>
         <li>
           <strong>Ask what we hold about you</strong>, ask us to correct it, or ask us to delete it,
@@ -170,8 +241,10 @@ export default function PrivacyPage() {
 
       <h2>Security</h2>
       <p>
-        The site is served over an encrypted connection. Confirmation and removal links are stored
-        only in scrambled (hashed) form, so the links cannot be recovered from our database. No
+        The site is served over an encrypted connection. Passwords are stored only as bcrypt hashes
+        (passwords must be at least {PASSWORD.minLength} characters). Sign-in sessions, confirmation
+        links and removal links are stored only in scrambled (hashed) form, so they cannot be
+        recovered from our database. The session cookie cannot be read by scripts on the page. No
         system is perfectly secure, and we cannot promise that a breach will never happen; if one
         affects your data, we will tell you as the law requires.
       </p>

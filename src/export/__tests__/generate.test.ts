@@ -6,13 +6,8 @@ import { loadFragment } from "@/shaders/loaders";
 import { shaders } from "@/shaders/registry";
 import { applyPreset, defaultSettings, type Settings } from "@/shaders/settings";
 import { buildRuntimeSource, OUTPUT } from "../../../scripts/runtime-source.mjs";
-import {
-  componentName,
-  EXPORT_TARGETS,
-  generateAllExports,
-  generateExport,
-  installCommand,
-} from "../generate";
+import { componentName, EXPORT_TARGETS, generateAllExports, generateExport } from "../generate";
+import { installCommandFor, registryIndex } from "../registry";
 import { RUNTIME_JS, RUNTIME_TS } from "../runtime-source.generated";
 
 /** Evaluates a template literal from generated code back into its string value. */
@@ -47,12 +42,15 @@ describe("naming", () => {
     expect(componentName("plasma")).toBe("Plasma");
   });
 
-  it("builds the registry install command", () => {
+  it("builds the signed registry install command and a code-free index", () => {
     const meta = shaders[0];
     if (!meta) throw new Error("catalog is empty");
-    expect(installCommand(meta)).toMatch(
-      new RegExp(`^npx shadcn@latest add https://[^ ]+/r/${meta.id}\\.json$`),
+    expect(installCommandFor(meta, "abc")).toMatch(
+      new RegExp(`^npx shadcn@latest add "https://[^ ]+/r/${meta.id}\\.json\\?token=abc"$`),
     );
+    const index = JSON.stringify(registryIndex(shaders));
+    expect(index).not.toContain("gl_FragColor");
+    expect(index).not.toContain("void main");
   });
 });
 

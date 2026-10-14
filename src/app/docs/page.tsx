@@ -22,7 +22,7 @@ const sections = [
   { id: "license", label: "License" },
 ];
 
-const INSTALL = `npx shadcn@latest add ${SITE_URL}/r/mesh-drift.json`;
+const INSTALL = `npx shadcn@latest add "${SITE_URL}/r/mesh-drift.json?token=<from the code panel>"`;
 
 const NEXT_USAGE = `import { MeshDrift } from "@/components/shadeon/mesh-drift";
 
@@ -117,12 +117,14 @@ export default function DocsPage() {
             Open any shader in the <Link href="/shaders">gallery</Link> and press{" "}
             <strong>Code</strong>. You get three versions: a React and TypeScript component, plain
             JavaScript, and the raw GLSL fragment shader. On a shader&apos;s own page you can tune
-            colours, speed and shape first, and the code updates to match.
+            colours, speed and shape first, and the code updates to match. Exploring and tuning
+            shaders is open to everyone; to see and copy the code,{" "}
+            <Link href="/signup">create a free account</Link> or <Link href="/login">sign in</Link>.
           </p>
           <p>
             If your project uses the shadcn CLI, you can add the React component with one command
-            instead of copying it. Replace <code>mesh-drift</code> with the id of the shader you
-            want.
+            instead of copying it. Signed in, the React tab of the code panel shows the command for
+            that shader. Its link is personal and works for one hour, so copy a fresh one each time.
           </p>
           <CodeBlock code={INSTALL} lang="bash" title="Terminal" />
 

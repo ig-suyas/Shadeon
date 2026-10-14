@@ -12,7 +12,13 @@ export const LEGAL = {
   postalAddress: "[Postal address, if required]",
   /** Country or state whose law governs the Terms, and whose courts hear disputes. */
   governingLaw: "[country or state]",
-  /** Minimum age to use the forms. */
+  /**
+   * How long the database provider's backups (point-in-time history) keep
+   * data, in days: deleted accounts stay in backups until then. Depends on the
+   * Neon plan; set it to the configured window.
+   */
+  backupRetentionDays: "[backup window in days]",
+  /** Minimum age to use the forms and to hold an account. */
   minimumAge: 18,
   /** ISO date these texts last changed. */
   updated: "2026-10-14",
@@ -22,6 +28,12 @@ export const LEGAL = {
    */
   draft: true,
 } as const;
+
+/**
+ * The version of the Terms and Privacy Policy a new account accepts, stored
+ * with the account. It follows the date the texts last changed.
+ */
+export const TERMS_VERSION = LEGAL.updated;
 
 /** How long data is kept. The server enforces these (see `purgeExpired`). */
 export const RETENTION = {

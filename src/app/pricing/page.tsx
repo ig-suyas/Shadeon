@@ -35,7 +35,7 @@ export default function PricingPage() {
             <h2 id="free-title" className="text-2xl font-semibold tracking-tight">
               Free
             </h2>
-            <p className="text-text-muted">For everyone. No account needed.</p>
+            <p className="text-text-muted">For everyone. A free account unlocks the code.</p>
           </div>
           <p className="text-5xl font-semibold tracking-tighter">
             $0

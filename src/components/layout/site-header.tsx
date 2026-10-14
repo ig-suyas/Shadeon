@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
+import { AccountLink } from "./account-link";
 import { Wordmark } from "./wordmark";
 import { ThemeToggle } from "./theme-toggle";
 
 const links = [
   { href: "/shaders", label: "Shaders" },
-  { href: "/docs", label: "Docs" },
+  // Hidden on the narrowest screens to make room for the account link; the footer links it.
+  { href: "/docs", label: "Docs", narrow: false },
   { href: "/pricing", label: "Pricing" },
 ];
 
@@ -21,11 +24,15 @@ export function SiteHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-text-muted hover:text-text rounded-control px-2 py-2 text-sm transition-colors duration-150 sm:px-3"
+              className={cn(
+                "text-text-muted hover:text-text rounded-control px-2 py-2 text-sm transition-colors duration-150 sm:px-3",
+                "narrow" in link && link.narrow === false && "max-sm:hidden",
+              )}
             >
               {link.label}
             </Link>
           ))}
+          <AccountLink />
           <ThemeToggle />
           <Link href="/shaders" className={button("solid", "sm", "ml-2 max-md:hidden")}>
             Browse shaders

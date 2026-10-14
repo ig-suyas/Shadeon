@@ -7,6 +7,18 @@ import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { contentSecurityPolicy, securityHeaders } from "@/lib/security-headers";
+import {
+  changePassword,
+  completeReset,
+  completeSignup,
+  createSession,
+  deleteAccount,
+  deleteUserSessions,
+  sessionUser,
+  signInWithGoogle,
+  startReset,
+  startSignup,
+} from "../accounts";
 import type { Database } from "../db/client";
 import { schema } from "../db/schema";
 import { describeError, logFailure } from "../log";
@@ -45,9 +57,51 @@ describe("least-privilege database role (scripts/db-app-role.sql)", () => {
     await expect(purgeExpired(db)).resolves.toBeUndefined();
   });
 
+  it("can do everything the account system does", async () => {
+    const { db } = await asAppRole();
+    const signup = await startSignup(db, {
+      email: "ada@example.com",
+      passwordHash: "$2b$12$hash",
+      termsVersion: "t",
+    });
+    const created = await completeSignup(db, signup);
+    expect(created.status).toBe("created");
+    if (created.status !== "created") return;
+    const session = await createSession(db, created.userId);
+    const view = await sessionUser(db, session.token);
+    expect(view?.id).toBe(created.userId);
+    await changePassword(db, created.userId, "$2b$12$other", view!.sessionId);
+    const reset = await startReset(db, "ada@example.com");
+    expect(await completeReset(db, reset!, "$2b$12$third")).toBe(created.userId);
+    expect(await signInWithGoogle(db, { sub: "42", email: "ada@example.com" }, "t")).toMatchObject({
+      status: "ok",
+    });
+    await deleteUserSessions(db, created.userId);
+    expect(await deleteAccount(db, created.userId)).toBe(true);
+  });
+
+  it("other roles see no account rows, even if granted the tables (Row Level Security)", async () => {
+    const { client, db } = await asAppRole();
+    await signInWithGoogle(db, { sub: "42", email: "ada@example.com" }, "t");
+    await client.exec("RESET ROLE");
+    await client.exec(
+      "CREATE ROLE outsider; GRANT SELECT, UPDATE, DELETE ON users, sessions, auth_tokens TO outsider;",
+    );
+    await client.exec("SET ROLE outsider");
+    const seen = await client.query<{ count: number }>("SELECT count(*)::int AS count FROM users");
+    expect(seen.rows[0]?.count).toBe(0);
+    await client.exec("DELETE FROM users");
+    await client.exec("RESET ROLE");
+    const kept = await client.query<{ count: number }>("SELECT count(*)::int AS count FROM users");
+    expect(kept.rows[0]?.count).toBe(1);
+  });
+
   it("cannot drop, empty or create tables", async () => {
     const { client } = await asAppRole();
     await expect(client.exec("DROP TABLE waitlist")).rejects.toThrow();
+    await expect(client.exec("DROP TABLE users")).rejects.toThrow();
+    await expect(client.exec("TRUNCATE sessions")).rejects.toThrow();
+    await expect(client.exec("ALTER TABLE users DISABLE ROW LEVEL SECURITY")).rejects.toThrow();
     await expect(client.exec("TRUNCATE messages")).rejects.toThrow();
     await expect(client.exec("ALTER TABLE waitlist ADD COLUMN x text")).rejects.toThrow();
     await expect(client.exec("CREATE TABLE stolen (x text)")).rejects.toThrow();
@@ -57,6 +111,8 @@ describe("least-privilege database role (scripts/db-app-role.sql)", () => {
     const { client } = await asAppRole();
     await expect(client.exec("UPDATE messages SET message = 'x'")).rejects.toThrow();
     await expect(client.exec("UPDATE shader_requests SET title = 'x'")).rejects.toThrow();
+    await expect(client.exec("UPDATE sessions SET user_id = user_id")).rejects.toThrow();
+    await expect(client.exec("UPDATE auth_tokens SET email = 'x'")).rejects.toThrow();
   });
 });
 

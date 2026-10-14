@@ -19,11 +19,13 @@ if (!process.env.NEXT_PUBLIC_SITE_URL) {
   blockers.push(`NEXT_PUBLIC_SITE_URL is not set (falling back to ${SITE_URL}).`);
 }
 if (!process.env.DATABASE_URL) {
-  blockers.push("DATABASE_URL is not set: the waitlist, request and contact forms will not work.");
+  blockers.push(
+    "DATABASE_URL is not set: accounts (and so the code), the waitlist, request and contact forms will not work.",
+  );
 }
 if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
   blockers.push(
-    "RESEND_API_KEY / EMAIL_FROM are not set: waitlist confirmation emails cannot be sent.",
+    "RESEND_API_KEY / EMAIL_FROM are not set: sign-up, password reset and waitlist emails cannot be sent.",
   );
 }
 if (!process.env.CRON_SECRET) {
@@ -33,6 +35,20 @@ if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN
   // Serverless instances each keep their own in-memory counters, so without a
   // shared store the limits can be multiplied by spreading requests out.
   blockers.push("Upstash is not configured: rate limits would be per server instance only.");
+}
+if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32) {
+  blockers.push(
+    "AUTH_SECRET is not set (32+ random characters): signed-in visitors get no shadcn install command.",
+  );
+}
+if (!process.env.GOOGLE_CLIENT_ID) {
+  warnings.push(
+    'GOOGLE_CLIENT_ID is not set: "Continue with Google" is hidden; email sign-in still works.',
+  );
+} else {
+  warnings.push(
+    "Google sign-in: check that <site>/auth/google/callback is an authorised redirect URI of the OAuth client.",
+  );
 }
 const turnstileSecret = Boolean(process.env.TURNSTILE_SECRET_KEY);
 const turnstileSiteKey = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);

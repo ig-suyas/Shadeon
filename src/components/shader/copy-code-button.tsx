@@ -1,9 +1,12 @@
 "use client";
 
+import { LockSimpleIcon } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import { button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { ExportTarget } from "@/export/targets";
-import { loadFragment } from "@/shaders/loaders";
+import { fetchCode, loginHere, SignInRequired, useSession } from "@/lib/session-client";
 import type { ShaderMeta } from "@/shaders/schema";
 
 interface CopyCodeButtonProps {
@@ -19,8 +22,9 @@ interface CopyCodeButtonProps {
 }
 
 /**
- * Copies a shader's production code for the given settings. The generator and
- * the shader source load on demand, so pages that only show the button stay light.
+ * Copies a shader's production code for the given settings. The code is
+ * generated on the server for signed-in visitors; a signed-out visitor gets a
+ * button that goes to sign-in and comes back to this page.
  */
 export function CopyCodeButton({
   shader,
@@ -32,25 +36,44 @@ export function CopyCodeButton({
   size = "md",
   className,
 }: CopyCodeButtonProps) {
+  const session = useSession();
+  const router = useRouter();
+
+  const current = useCallback((): Record<string, unknown> | undefined => {
+    if (!colorVars) return settings;
+    const computed = getComputedStyle(document.documentElement);
+    return {
+      ...settings,
+      colors: colorVars.map((name) => computed.getPropertyValue(name).trim()),
+    };
+  }, [settings, colorVars]);
+
   const warm = useCallback(() => {
-    void import("@/export/generate");
-    void loadFragment(shader.id).catch(() => {});
-  }, [shader.id]);
+    if (session.status === "signed-in") void fetchCode(shader.id, current()).catch(() => {});
+  }, [session.status, shader.id, current]);
+
+  if (session.status === "signed-out") {
+    return (
+      <button
+        type="button"
+        onClick={() => router.push(loginHere())}
+        className={button(variant, size, className)}
+        data-testid="copy-sign-in"
+      >
+        <LockSimpleIcon size={size === "sm" ? 16 : 18} aria-hidden="true" />
+        Sign in to copy
+      </button>
+    );
+  }
 
   const build = async (): Promise<string> => {
-    let current = settings;
-    if (colorVars) {
-      const computed = getComputedStyle(document.documentElement);
-      current = {
-        ...settings,
-        colors: colorVars.map((name) => computed.getPropertyValue(name).trim()),
-      };
+    try {
+      const { exports } = await fetchCode(shader.id, current());
+      return exports[target].code;
+    } catch (error) {
+      if (error instanceof SignInRequired) router.push(loginHere());
+      throw error;
     }
-    const [{ generateExport }, fragment] = await Promise.all([
-      import("@/export/generate"),
-      loadFragment(shader.id),
-    ]);
-    return generateExport({ meta: shader, fragment, settings: current }, target).code;
   };
 
   return (

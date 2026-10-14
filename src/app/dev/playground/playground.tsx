@@ -5,7 +5,8 @@ import { benchmarkFragment } from "@/engine/benchmark";
 import { dedicatedCount } from "@/engine/context-budget";
 import { ShaderCanvas, type ShaderStatus } from "@/engine/ShaderCanvas";
 import { sharedStats } from "@/engine/shared-context";
-import { EXPORT_TARGETS, generateExport, type ExportTarget } from "@/export/generate";
+import { EXPORT_TARGETS, type ExportTarget } from "@/export/targets";
+import { fetchCode, type CodeExports } from "@/lib/session-client";
 import { loadFragment } from "@/shaders/loaders";
 import { shaders } from "@/shaders/registry";
 import { applyPreset, defaultSettings, type Settings } from "@/shaders/settings";
@@ -18,7 +19,6 @@ export function Playground() {
   const [shaderId, setShaderId] = useState(shaders[0]?.id ?? "");
   const shader = shaders.find((item) => item.id === shaderId) ?? shaders[0];
   const [overrides, setOverrides] = useState<Record<string, Settings>>({});
-  const [fragments, setFragments] = useState<Record<string, string>>({});
   const [target, setTarget] = useState<ExportTarget>("react");
   const [status, setStatus] = useState<ShaderStatus>("poster");
   const [stats, setStats] = useState("");
@@ -56,17 +56,6 @@ export function Playground() {
     () => (shader ? (overrides[shader.id] ?? defaultSettings(shader)) : null),
     [shader, overrides],
   );
-  const fragment = shader ? fragments[shader.id] : undefined;
-
-  useEffect(() => {
-    let cancelled = false;
-    void loadFragment(shaderId).then((source) => {
-      if (!cancelled) setFragments((current) => ({ ...current, [shaderId]: source }));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [shaderId]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -78,20 +67,33 @@ export function Playground() {
     return () => clearInterval(timer);
   }, []);
 
-  const code = useMemo(
-    () =>
-      shader && fragment && settings
-        ? generateExport({ meta: shader, fragment, settings }, target).code
-        : "",
-    [shader, fragment, settings, target],
+  // Exports come from the server (/api/code), like everywhere else on the site,
+  // so the generator never ships to the browser. Sign in to see them here.
+  const [exportsFor, setExportsFor] = useState<{ key: string; value: CodeExports | null } | null>(
+    null,
   );
-  const vanilla = useMemo(
-    () =>
-      shader && fragment && settings
-        ? generateExport({ meta: shader, fragment, settings }, "vanilla").code
-        : "",
-    [shader, fragment, settings],
-  );
+  const exportKey = shader && settings ? `${shader.id}|${JSON.stringify(settings)}` : "";
+  useEffect(() => {
+    if (!shader || !settings) return;
+    let cancelled = false;
+    fetchCode(shader.id, settings).then(
+      (response) => {
+        if (!cancelled) setExportsFor({ key: exportKey, value: response.exports });
+      },
+      () => {
+        if (!cancelled) setExportsFor({ key: exportKey, value: null });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [shader, settings, exportKey]);
+  const exports = exportsFor?.key === exportKey ? exportsFor.value : null;
+  const code =
+    exportsFor?.key === exportKey && !exports
+      ? "// Sign in (/login) to see the generated code."
+      : (exports?.[target].code ?? "");
+  const vanilla = exports?.vanilla.code ?? "";
 
   if (!shader || !settings) return null;
 
