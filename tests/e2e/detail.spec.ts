@@ -67,14 +67,14 @@ test.describe("shader page", () => {
   });
 
   test("a shared link restores the tuned settings", async ({ page }) => {
-    await page.goto("/shaders/contour-field?c=0a2a66-3f6fc4-eaf2ff&levels=28&intensity=0.8");
+    await page.goto("/shaders/contour-field?c=0a2a66-3f6fc4-eaf2ff&levels=20&intensity=0.8");
     await expect(page.getByRole("button", { name: "Blueprint" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    await expect(page.getByRole("slider", { name: "Levels" })).toHaveValue("28");
+    await expect(page.getByRole("slider", { name: "Levels" })).toHaveValue("20");
     await expect(page.getByTestId("code-panel").getByRole("tabpanel")).toContainText(
-      "levels = 28,",
+      "levels = 20,",
     );
   });
 

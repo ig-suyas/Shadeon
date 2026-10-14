@@ -41,8 +41,8 @@ export const meta: ShaderMeta = {
     {
       id: "pastel",
       name: "Pastel",
-      colors: ["#e8e4f2", "#f6f1ea", "#ffc8dd", "#bde0fe"],
-      values: { intensity: 0.7, scale: 0.8 },
+      colors: ["#4b4766", "#7d76a0", "#ffc8dd", "#bde0fe"],
+      values: { intensity: 1, scale: 0.8 },
     },
   ],
   reactive: { pointer: false, scroll: false },

@@ -17,9 +17,9 @@ export default function Home() {
   const hero = getShader("mesh-drift");
   const closing = getShader("contour-field");
   const featured = [
-    getShader("aurora-veil"),
-    getShader("contour-field"),
-    getShader("mesh-drift"),
+    getShader("ink-smoke"),
+    getShader("liquid-chrome"),
+    getShader("silk-waves"),
   ].filter((shader) => shader !== undefined);
 
   return (

@@ -9,6 +9,15 @@ export interface Release {
 export const releases: Release[] = [
   {
     date: "2026-10-14",
+    title: "Thirty shaders",
+    changes: [
+      "Twenty-seven new shaders, from soft gradients and frosted glass to clouds, ink, chrome, contour maps and fractals.",
+      "Shaders that react to the pointer (Pointer Glow, Ripple Pool, Lava Blobs, Star Drift) and to scrolling (Dawn Scroll, Horizon Grid).",
+      "Four presets for every new shader.",
+    ],
+  },
+  {
+    date: "2026-10-14",
     title: "First preview",
     changes: [
       "Three shaders: Mesh Drift, Aurora Veil and Contour Field.",
@@ -30,9 +39,8 @@ export interface RoadmapItem {
 export const roadmap: { now: RoadmapItem[]; next: RoadmapItem[]; later: RoadmapItem[] } = {
   now: [
     {
-      title: "Thirty shaders for launch",
-      detail:
-        "Gradients, aurora, liquid, glass, grain, halftone, waves, lines, particles, plasma and more.",
+      title: "Polish for launch",
+      detail: "Speed, accessibility and testing on real phones and other browsers.",
     },
     {
       title: "Pointer and scroll reactive backgrounds",

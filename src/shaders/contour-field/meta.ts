@@ -8,7 +8,7 @@ export const meta: ShaderMeta = {
   category: "lines",
   tags: ["topographic", "contour", "lines", "map", "minimal", "pointer"],
   colors: {
-    default: ["#0c0f14", "#3a4556", "#e8b04a"],
+    default: ["#0c0f14", "#2f3946", "#d9a85a"],
     labels: ["Background", "Lines", "Index lines"],
   },
   controls: [
@@ -18,7 +18,7 @@ export const meta: ShaderMeta = {
       type: "float",
       label: "Scale",
       description: "How much terrain is in view. Higher shows more, smaller features.",
-      default: 2.2,
+      default: 1.6,
       min: 0.8,
       max: 6,
       step: 0.05,
@@ -39,19 +39,19 @@ export const meta: ShaderMeta = {
       type: "float",
       label: "Levels",
       description: "Number of contour levels across the height range.",
-      default: 22,
+      default: 18,
       min: 6,
       max: 48,
       step: 1,
     },
   ],
   presets: [
-    { id: "survey", name: "Survey", colors: ["#0c0f14", "#3a4556", "#e8b04a"] },
+    { id: "survey", name: "Survey", colors: ["#0c0f14", "#2f3946", "#d9a85a"] },
     {
       id: "blueprint",
       name: "Blueprint",
       colors: ["#0a2a66", "#3f6fc4", "#eaf2ff"],
-      values: { levels: 28, intensity: 0.8 },
+      values: { levels: 20, intensity: 0.8 },
     },
     {
       id: "chalk",
@@ -62,8 +62,8 @@ export const meta: ShaderMeta = {
     {
       id: "signal",
       name: "Signal",
-      colors: ["#050505", "#1f3d2b", "#3dff9a"],
-      values: { levels: 34, scale: 3, intensity: 0.7 },
+      colors: ["#06110c", "#1c3a2b", "#7fdcae"],
+      values: { levels: 22, scale: 2, intensity: 0.8 },
     },
   ],
   reactive: { pointer: true, scroll: false },

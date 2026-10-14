@@ -13,9 +13,11 @@ ${HASH}
 ${NOISE}
 ${FBM}
 ${SEED}
-// Terrain height at a point. The pointer raises a soft hill under itself.
+// Terrain height at a point: broad rolling hills with quiet detail on top.
+// The pointer raises a soft hill under itself.
 float terrain(vec2 p, vec2 pointer, float t) {
-  float h = fbm(p * 0.8 + vec2(t, t * 0.6));
+  vec2 drift = vec2(t, t * 0.6);
+  float h = noise(p * 0.55 + drift) * 0.7 + fbm(p * 1.1 - drift) * 0.3;
   vec2 d = p - pointer;
   return h + 0.22 * exp(-dot(d, d) * 2.5);
 }
@@ -40,11 +42,16 @@ void main() {
   float nearest = floor(level + 0.5);
   float distPx = abs(level - nearest) / slope;
   float major = 1.0 - step(0.5, mod(nearest, 5.0));
-  float width = u_intensity * (0.5 + 0.5 * major);
-  float line = 1.0 - smoothstep(width, width + 1.0, distPx);
+  float width = u_intensity * (0.45 + 0.35 * major);
+  float line = 1.0 - smoothstep(width, width + 1.2, distPx);
 
-  vec3 color = mix(u_color1, u_color3, smoothstep(0.25, 0.85, h) * 0.22);
-  color = mix(color, mix(u_color2, u_color3, major), line);
+  // Soft hill shading lit from the upper left gives the map some depth.
+  vec3 normal = normalize(vec3(-(hx - h) / px, -(hy - h) / px, 2.5));
+  float shade = dot(normal, normalize(vec3(-0.5, 0.6, 0.6)));
+  vec3 color = mix(u_color1, u_color3, smoothstep(0.2, 0.9, h) * 0.12);
+  color *= 0.9 + 0.2 * shade;
+  // Index lines carry the accent; plain lines stay quiet.
+  color = mix(color, mix(u_color2, u_color3, major * 0.8), line * (0.75 + 0.25 * major));
 
   gl_FragColor = vec4(color, 1.0);
 }

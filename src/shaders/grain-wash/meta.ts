@@ -36,8 +36,8 @@ export const meta: ShaderMeta = {
     {
       id: "newsprint",
       name: "Newsprint",
-      colors: ["#d9d6cf", "#bdb9b0", "#f2f0ea"],
-      values: { intensity: 0.9, vignette: 0.15, scale: 2 },
+      colors: ["#3a3833", "#a29d92", "#f1ece1"],
+      values: { intensity: 0.8, vignette: 0.15 },
     },
     {
       id: "deep-sea",

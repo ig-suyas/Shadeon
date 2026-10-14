@@ -9,7 +9,7 @@ export const meta: ShaderMeta = {
   category: "plasma",
   tags: ["plasma", "psychedelic", "bands", "colourful", "retro"],
   colors: {
-    default: ["#12002f", "#7a04eb", "#ff2e97", "#ffc857"],
+    default: ["#1a1033", "#5b3fa6", "#e0679b", "#ffd2ad"],
     labels: ["Colour 1", "Colour 2", "Colour 3", "Colour 4"],
   },
   controls: [
@@ -30,7 +30,7 @@ export const meta: ShaderMeta = {
     }),
   ],
   presets: [
-    { id: "arcade", name: "Arcade", colors: ["#12002f", "#7a04eb", "#ff2e97", "#ffc857"] },
+    { id: "arcade", name: "Arcade", colors: ["#1a1033", "#5b3fa6", "#e0679b", "#ffd2ad"] },
     {
       id: "lagoon",
       name: "Lagoon",
@@ -40,13 +40,13 @@ export const meta: ShaderMeta = {
     {
       id: "ember",
       name: "Ember",
-      colors: ["#1b0000", "#9d0208", "#f48c06", "#ffe8a3"],
+      colors: ["#1c0806", "#8a2410", "#e07a2e", "#ffe2b0"],
       values: { bands: 1.4, scale: 0.7 },
     },
     {
       id: "mint",
       name: "Mint",
-      colors: ["#f1faee", "#a8dadc", "#457b9d", "#e2f6f0"],
+      colors: ["#123040", "#2f7f8f", "#9fd8cf", "#f0faf6"],
       values: { bands: 0.6, speed: 0.6, intensity: 1.3 },
     },
   ],

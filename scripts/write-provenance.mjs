@@ -24,7 +24,7 @@ const NOTES = {
     name: "Grain Wash",
     written: "2026-10-14",
     techniques: [
-      "Two fractal Brownian motion fields blending three tones.",
+      "Two value-noise fields (with a little fractal Brownian motion) blending three tones.",
       "Film grain from a per-pixel hash that is re-seeded 24 times a second, weighted towards mid-tones.",
       "Radial vignette with smoothstep.",
     ],
@@ -47,7 +47,7 @@ const NOTES = {
     techniques: [
       "Classic plasma: a sum of travelling sine waves, one of them radial around a moving point.",
       "Self-warp of the sampling position before evaluating the field.",
-      "Four-stop looping palette with eased interpolation.",
+      "Four-stop palette walked forwards and back along a cosine, so it has no seam.",
       "One-LSB hash dither to hide banding.",
     ],
     chunks: "HEADER, HASH, SEED, DITHER",

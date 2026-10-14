@@ -20,6 +20,8 @@ const page = await browser.newPage({
 });
 await page.goto(`${base}/dev/review${ids ? `?ids=${ids}` : ""}`);
 await page.waitForSelector("[data-testid=review-sheet] [data-shader]");
+// The server renders every shader; the client narrows to `ids` after hydration.
+await page.waitForLoadState("networkidle");
 // Bring every tile into view once so each one loads, then wait for all to go live.
 const tiles = page.locator("[data-testid=review-sheet] [data-shader]");
 const count = await tiles.count();

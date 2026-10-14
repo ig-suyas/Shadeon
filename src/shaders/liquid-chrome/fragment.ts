@@ -19,15 +19,16 @@ float surface(vec2 p, float t) {
     noise(p * 0.7 + vec2(t, 1.7)),
     noise(p * 0.7 + vec2(5.2, -t))
   ) - 0.5;
-  vec2 q = p + warp * 1.8 * u_intensity;
+  vec2 q = p + warp * 1.3 * u_intensity;
   return noise(q * 0.9 + vec2(-t * 0.6, t * 0.4)) * 0.8
     + noise(q * 1.9 + vec2(7.0 + t * 0.3, 3.0)) * 0.2;
 }
 
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution;
-  vec2 p = (uv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0) * u_scale * 1.5;
-  p += seedOffset(u_seed);
+  vec2 p = (uv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0) * u_scale * 1.2;
+  // Turned off the noise grid's axes so no folds line up with the screen.
+  p = mat2(0.8, -0.6, 0.6, 0.8) * p + seedOffset(u_seed);
   float t = u_time * 0.1;
 
   // Surface normal from three height samples.
@@ -36,7 +37,7 @@ void main() {
   vec3 n = normalize(vec3(
     h - surface(p + vec2(e, 0.0), t),
     h - surface(p + vec2(0.0, e), t),
-    e * 0.55 / u_relief
+    e * 0.8 / u_relief
   ));
 
   // What a polished surface would mirror: a studio with a graded backdrop
