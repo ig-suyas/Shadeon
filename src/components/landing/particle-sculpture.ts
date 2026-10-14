@@ -52,6 +52,7 @@ uniform vec2 u_cursor;    // fast-following pointer, 0..1
 uniform float u_presence; // 0..1: is the pointer over the hero
 uniform float u_spin;     // seconds the vortex has been turning
 uniform vec3 u_place;     // optional placement: centre (0..1) and unit in px; z = 0 uses the hero layout
+uniform float u_arm;      // horizontal stretch of the two arms (1 = as designed); wide screens get longer arms
 uniform float u_dpr;
 uniform vec3 u_color1;
 uniform vec3 u_color2;
@@ -90,7 +91,7 @@ vec3 path(float phi, float r, float t) {
   } else {
     float side = sign(phi);
     float beyond = ap - PI;
-    float x = side * (a * PI + (a + b) * beyond);
+    float x = side * (a * PI + (a + b) * beyond * u_arm);
     float sweep = smoothstep(0.0, 1.8, beyond);
     c = vec3(x, b * mix(1.0, -0.1, sweep), 0.0);
     c.y += sweep * 0.12 * sin(x * 1.3 + t * 0.5 + r);
@@ -399,6 +400,7 @@ export function mountSculpture(
         "u_presence",
         "u_spin",
         "u_dpr",
+        "u_arm",
         "u_color1",
         "u_color2",
         "u_color3",
@@ -453,6 +455,11 @@ export function mountSculpture(
     gl.uniform1f(locations.u_presence ?? null, motion.matches ? 0 : presence);
     gl.uniform1f(locations.u_spin ?? null, spin);
     gl.uniform1f(locations.u_dpr ?? null, ratio());
+    // Wider screens: longer arms (up to 1.3x) so the form spans more of the page.
+    gl.uniform1f(
+      locations.u_arm ?? null,
+      1 + 0.3 * Math.min(1, Math.max(0, (canvas.width / canvas.height - 1.4) / 0.6)),
+    );
     gl.drawArrays(gl.POINTS, 0, drawCount);
     if (!ready) {
       ready = true;
@@ -620,7 +627,7 @@ export function renderSculptureImage(
   colors: readonly string[],
   width: number,
   height: number,
-  options: { count: number; time: number },
+  options: { count: number; time: number; /** Arm stretch, 1 = as designed. */ arm?: number },
 ): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -672,6 +679,7 @@ export function renderSculptureImage(
     // A little larger points than live, so the still reads as continuous silk.
     gl.uniform1f(u("u_dpr"), 1.35);
     gl.uniform3f(u("u_place"), 0.5, 0.5, height * 0.25);
+    gl.uniform1f(u("u_arm"), options.arm ?? 1);
     gl.viewport(0, 0, width, height);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);

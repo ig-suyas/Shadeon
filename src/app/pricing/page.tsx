@@ -1,5 +1,6 @@
 import { CheckIcon } from "@phosphor-icons/react/ssr";
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { WaitlistForm } from "@/components/forms/forms";
 import { PageShell } from "@/components/layout/page-shell";
@@ -29,7 +30,8 @@ export default function PricingPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
         <section
           aria-labelledby="free-title"
-          className="border-line bg-bg-raised rounded-card flex flex-col gap-6 border p-6 md:p-8"
+          className="enter border-line bg-bg-raised rounded-card flex flex-col gap-6 border p-6 md:p-8"
+          style={{ "--i": 1 } as CSSProperties}
         >
           <div className="flex flex-col gap-2">
             <h2 id="free-title" className="text-2xl font-semibold tracking-tight">
@@ -38,15 +40,22 @@ export default function PricingPage() {
             <p className="text-text-muted">For everyone. A free account unlocks the code.</p>
           </div>
           <p className="text-5xl font-semibold tracking-tighter">
-            $0
+            {/* Counts down from $20 in CSS; screen readers get the plain price. */}
+            <span aria-hidden="true" className="price-count" />
+            <span className="sr-only">$0</span>
             <span className="text-text-muted ml-2 text-base font-normal tracking-normal">
               today
             </span>
           </p>
           <ul className="flex flex-col gap-3">
-            {free.map((item) => (
+            {free.map((item, index) => (
               <li key={item} className="flex gap-3">
-                <CheckIcon size={20} aria-hidden="true" className="text-accent mt-0.5 shrink-0" />
+                <CheckIcon
+                  size={20}
+                  aria-hidden="true"
+                  className="tick text-accent mt-0.5 shrink-0"
+                  style={{ "--i": index + 2 } as CSSProperties}
+                />
                 <span>{item}</span>
               </li>
             ))}
@@ -58,7 +67,8 @@ export default function PricingPage() {
 
         <section
           aria-labelledby="pro-title"
-          className="border-line rounded-card flex flex-col gap-6 border border-dashed p-6 md:p-8"
+          className="enter border-line rounded-card flex flex-col gap-6 border border-dashed p-6 md:p-8"
+          style={{ "--i": 2 } as CSSProperties}
         >
           <div className="flex flex-col gap-2">
             <h2 id="pro-title" className="text-2xl font-semibold tracking-tight">

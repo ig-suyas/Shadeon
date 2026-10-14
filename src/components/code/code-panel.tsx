@@ -1,6 +1,8 @@
 "use client";
 
 import { LockSimpleIcon } from "@phosphor-icons/react";
+import { LazyMotion, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { button } from "@/components/ui/button";
@@ -8,6 +10,8 @@ import { CopyButton } from "@/components/ui/copy-button";
 import type { ExportResult } from "@/export/generate";
 import { EXPORT_TARGETS, TARGET_LABELS, type ExportTarget } from "@/export/targets";
 import { cn } from "@/lib/cn";
+import { SPRING } from "@/lib/motion";
+import { loadLayoutFeatures } from "@/lib/motion-features";
 import {
   fetchCode,
   loginHere,
@@ -147,6 +151,7 @@ function useHighlighted(result: ExportResult | null, enabled: boolean): string |
  */
 export function CodePanel({ shader, settings, target, onTargetChange, className }: CodePanelProps) {
   const id = useId();
+  const reduceMotion = useReducedMotion();
   const tabs = useRef<Map<ExportTarget, HTMLButtonElement>>(new Map());
   const root = useRef<HTMLDivElement>(null);
   const near = useNearViewport(root);
@@ -193,25 +198,36 @@ export function CodePanel({ shader, settings, target, onTargetChange, className 
           onKeyDown={onKeyDown}
           className="scroll-quiet flex min-w-0 gap-1 overflow-x-auto"
         >
-          {EXPORT_TARGETS.map((item) => (
-            <button
-              key={item}
-              ref={(element) => {
-                if (element) tabs.current.set(item, element);
-                else tabs.current.delete(item);
-              }}
-              type="button"
-              role="tab"
-              id={`${id}-tab-${item}`}
-              aria-selected={item === target}
-              aria-controls={`${id}-panel`}
-              tabIndex={item === target ? 0 : -1}
-              onClick={() => onTargetChange(item)}
-              className="text-text-muted hover:text-text aria-selected:bg-bg-sunken aria-selected:text-text rounded-control shrink-0 px-3 py-1.5 text-sm font-medium transition-colors duration-150"
-            >
-              {TARGET_LABELS[item]}
-            </button>
-          ))}
+          <LazyMotion features={loadLayoutFeatures} strict>
+            {EXPORT_TARGETS.map((item) => (
+              <button
+                key={item}
+                ref={(element) => {
+                  if (element) tabs.current.set(item, element);
+                  else tabs.current.delete(item);
+                }}
+                type="button"
+                role="tab"
+                id={`${id}-tab-${item}`}
+                aria-selected={item === target}
+                aria-controls={`${id}-panel`}
+                tabIndex={item === target ? 0 : -1}
+                onClick={() => onTargetChange(item)}
+                className="text-text-muted hover:text-text aria-selected:text-text rounded-control relative isolate shrink-0 px-3 py-1.5 text-sm font-medium transition-colors duration-150"
+              >
+                {item === target ? (
+                  // One indicator that slides to the chosen tab: the change of format reads as a move.
+                  <m.span
+                    layoutId={`${id}-tab-indicator`}
+                    aria-hidden="true"
+                    className="bg-bg-sunken rounded-control absolute inset-0 -z-10"
+                    transition={reduceMotion ? { duration: 0 } : SPRING.ui}
+                  />
+                ) : null}
+                {TARGET_LABELS[item]}
+              </button>
+            ))}
+          </LazyMotion>
         </div>
         {exports === "signed-out" ? null : (
           <CopyButton

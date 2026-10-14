@@ -136,13 +136,99 @@ body {
     }
   }
 
-  /* Sections ease in as they scroll into view, where the browser supports it. */
-  @supports (animation-timeline: view()) {
-    .reveal {
-      animation: rise linear both;
-      animation-timeline: view();
-      animation-range: entry 5% entry 40%;
-    }
+  /* `.reveal` (sections easing in on scroll) is driven by RevealObserver. */
+
+  /* Ticks arrive one by one after their card: the list reads as a sequence. */
+  .tick {
+    animation: pop var(--duration-slow) var(--ease-enter) both;
+    animation-delay: calc(var(--duration-base) + var(--i, 0) * var(--stagger) * 1.5);
+  }
+
+  /* The free price counts down to $0: the point of the page in one gesture. */
+  .price-count {
+    animation: count-down var(--duration-count) var(--ease-enter) both;
+    animation-delay: var(--duration-base);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* An integer property so the browser can interpolate the price as a number. */
+@property --price {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@keyframes count-down {
+  from {
+    --price: 20;
+  }
+  to {
+    --price: 0;
+  }
+}
+
+.price-count {
+  font-variant-numeric: tabular-nums;
+  counter-reset: price var(--price);
+}
+
+.price-count::before {
+  content: "$" counter(price);
+}
+
+/*
+ * Page transitions (React <ViewTransition> in app/template.tsx). The old page
+ * fades out quickly; the new one rises in a beat later. The rest of the
+ * document (header, footer) swaps without animating, so it stays an anchor.
+ */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(root) {
+  animation: none;
+}
+
+::view-transition-old(root) {
+  display: none;
+}
+
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(.page-out) {
+  animation: page-out var(--duration-fast) var(--ease-exit) both;
+}
+
+::view-transition-new(.page-in) {
+  animation: rise var(--duration-slow) var(--ease-enter) var(--duration-instant) both;
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
 }
 

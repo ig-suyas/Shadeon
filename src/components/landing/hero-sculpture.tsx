@@ -13,6 +13,14 @@ const STILL_TIME = 7.5;
 /** Size of the rendered sculpture image the engine samples. */
 const IMAGE_W = 2000;
 const IMAGE_H = 800;
+/**
+ * Desktop (owner, 2026-10-14: "a bit wider"): a wider image with longer arms,
+ * so the form spans more of the page at the same height. Phones keep the
+ * original image, which their layout fits by width.
+ */
+const WIDE_MIN = 1024;
+const WIDE_IMAGE_W = 2640;
+const WIDE_ARM = 1.6;
 
 function themeColors(): string[] {
   const computed = getComputedStyle(document.documentElement);
@@ -113,10 +121,13 @@ export function HeroSculpture() {
         import("./particle-sculpture"),
       ]);
       if (cancelled) return;
+      // Chosen once per mount: the image is the particles' home.
+      const wide = section.getBoundingClientRect().width >= WIDE_MIN;
       const render = (): HTMLCanvasElement | null =>
-        renderSculptureImage(themeColors(), IMAGE_W, IMAGE_H, {
+        renderSculptureImage(themeColors(), wide ? WIDE_IMAGE_W : IMAGE_W, IMAGE_H, {
           count: lowPower ? 320_000 : 520_000,
           time: STILL_TIME,
+          arm: wide ? WIDE_ARM : 1,
         });
       const image = render();
       if (!image) throw new Error("Could not render the sculpture");

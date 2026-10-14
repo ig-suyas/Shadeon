@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { InlineScript } from "@/components/layout/inline-script";
+import { RevealObserver } from "@/components/layout/reveal-observer";
 import { SiteAnalytics } from "@/components/layout/site-analytics";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         {children}
         <SiteFooter />
+        <RevealObserver />
         {/* Vercel serves the analytics script only on its own deployments
             (it sets VERCEL=1 there); elsewhere the tag would just 404. */}
         {process.env.VERCEL === "1" ? <SiteAnalytics /> : null}

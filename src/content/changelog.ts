@@ -14,6 +14,7 @@ export const releases: Release[] = [
       "Every shader now responds to the cursor. Three new ones: Fog Veil (wipe through rolling fog), Ink Bloom (pour ink into swirling water) and Event Horizon (a black hole that bends the stars).",
       "Shaders can now remember their previous frame, which is what lets fog, ink and trails persist and drift.",
       "A new home page with a liquid sculpture you can stir, and a simpler gallery with one category filter.",
+      "Smoother movement throughout: pages fade between each other, sections ease in as you scroll, and the code tabs slide.",
     ],
   },
   {

@@ -111,6 +111,7 @@
   --duration-slow: 420ms;
   --duration-expand: 480ms;
   --duration-reveal: 700ms;
+  --duration-count: 1800ms;
   --stagger: 60ms;
   --reveal-distance: 20px;
   --hover-lift: -2px;
