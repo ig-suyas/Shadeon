@@ -1,6 +1,7 @@
 import "server-only";
 import { createHmac, randomBytes } from "node:crypto";
 import { env } from "./env";
+import { logFailure } from "./log";
 
 /**
  * Fixed-window rate limiting. Keys are HMAC hashes, so no IP address or email
@@ -75,6 +76,12 @@ const remote =
     ? createUpstashStore(env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN)
     : null;
 
+/** Records a refusal for monitoring: the scope only, never who was refused. */
+function refuse(scope: string): false {
+  console.warn(`rate limit reached: ${scope}`);
+  return false;
+}
+
 /**
  * True when the request is within the limit. If the shared store cannot be
  * reached, the in-memory counter still applies, so the check never fails open.
@@ -87,12 +94,12 @@ export async function withinLimit(
 ): Promise<boolean> {
   const key = rateKey(scope, subject);
   const local = await memory.hit(key, limit.windowSeconds);
-  if (local > limit.max) return false;
+  if (local > limit.max) return refuse(scope);
   if (!store) return true;
   try {
-    return (await store.hit(key, limit.windowSeconds)) <= limit.max;
+    return (await store.hit(key, limit.windowSeconds)) <= limit.max || refuse(scope);
   } catch (error) {
-    console.error("rate limit store unavailable:", error instanceof Error ? error.message : error);
+    logFailure("rate limit store", error);
     return true; // the in-memory counter above already allowed this request
   }
 }

@@ -10,6 +10,7 @@ import {
   type FormState,
 } from "@/lib/forms";
 import { getDatabase, type Database } from "./db/client";
+import { logFailure } from "./log";
 import { sendWaitlistConfirmation } from "./mail";
 import { withinLimit } from "./rate-limit";
 import {
@@ -32,7 +33,7 @@ async function tidy(db: Database): Promise<void> {
   try {
     await purgeExpired(db);
   } catch (error) {
-    console.error("retention purge failed:", error instanceof Error ? error.message : error);
+    logFailure("retention purge", error);
   }
 }
 
@@ -120,7 +121,7 @@ export async function joinWaitlistAction(_previous: FormState, form: FormData): 
     // The same answer whether or not the address was already there.
     return { status: "success", message: WAITLIST_DONE };
   } catch (error) {
-    console.error("waitlist action failed:", error instanceof Error ? error.message : error);
+    logFailure("waitlist action", error);
     return { status: "error", message: UNAVAILABLE, values: echo(form, keys) };
   }
 }
@@ -148,7 +149,7 @@ export async function requestShaderAction(
     await tidy(db);
     return done;
   } catch (error) {
-    console.error("request action failed:", error instanceof Error ? error.message : error);
+    logFailure("request action", error);
     return { status: "error", message: UNAVAILABLE, values: echo(form, keys) };
   }
 }
@@ -175,7 +176,7 @@ export async function contactAction(_previous: FormState, form: FormData): Promi
     await tidy(db);
     return done;
   } catch (error) {
-    console.error("contact action failed:", error instanceof Error ? error.message : error);
+    logFailure("contact action", error);
     return { status: "error", message: UNAVAILABLE, values: echo(form, keys) };
   }
 }
@@ -199,7 +200,7 @@ async function tokenAction(
       ? { status: "success", message: success }
       : { status: "error", message: LINK_INVALID };
   } catch (error) {
-    console.error(`${scope} action failed:`, error instanceof Error ? error.message : error);
+    logFailure(`${scope} action`, error);
     return { status: "error", message: UNAVAILABLE };
   }
 }

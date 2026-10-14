@@ -30,11 +30,29 @@ if (!process.env.CRON_SECRET) {
   blockers.push("CRON_SECRET is not set: the daily retention job will not run.");
 }
 if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-  warnings.push("Upstash is not configured: rate limits are per server instance only.");
+  // Serverless instances each keep their own in-memory counters, so without a
+  // shared store the limits can be multiplied by spreading requests out.
+  blockers.push("Upstash is not configured: rate limits would be per server instance only.");
 }
-if (!process.env.TURNSTILE_SECRET_KEY || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+const turnstileSecret = Boolean(process.env.TURNSTILE_SECRET_KEY);
+const turnstileSiteKey = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+if (turnstileSecret !== turnstileSiteKey) {
+  blockers.push(
+    "Set both Turnstile keys or neither: with only the secret every form fails, with only the site key nothing is checked.",
+  );
+} else if (!turnstileSecret) {
   warnings.push(
     "Turnstile is not configured: forms rely on the honeypot, timing check and rate limits.",
+  );
+}
+if (process.env.DATABASE_MIGRATION_URL) {
+  warnings.push(
+    "DATABASE_MIGRATION_URL is set here. It is for running migrations only; do not set it on the deployed site.",
+  );
+}
+if (process.env.DATABASE_URL && process.env.DATABASE_URL === process.env.DATABASE_MIGRATION_URL) {
+  blockers.push(
+    "DATABASE_URL is the owner connection. Use the shadeon_app role (scripts/db-app-role.sql).",
   );
 }
 if (!process.env.RATE_LIMIT_SALT) {

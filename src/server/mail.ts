@@ -1,6 +1,7 @@
 import "server-only";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { env, isProduction } from "./env";
+import { logFailure } from "./log";
 import type { WaitlistMail } from "./repository";
 
 function escapeHtml(value: string): string {
@@ -69,7 +70,7 @@ export async function sendWaitlistConfirmation(mail: WaitlistMail): Promise<bool
     if (!response.ok) console.error(`waitlist email failed with status ${response.status}`);
     return response.ok;
   } catch (error) {
-    console.error("waitlist email failed:", error instanceof Error ? error.message : error);
+    logFailure("waitlist email", error);
     return false;
   }
 }

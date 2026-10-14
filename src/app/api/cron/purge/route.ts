@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { getDatabase } from "@/server/db/client";
 import { env } from "@/server/env";
+import { logFailure } from "@/server/log";
 import { purgeExpired } from "@/server/repository";
 
 /**
@@ -25,7 +26,7 @@ export async function GET(request: Request): Promise<Response> {
     await purgeExpired(db);
     return Response.json({ ok: true });
   } catch (error) {
-    console.error("retention cron failed:", error instanceof Error ? error.message : error);
+    logFailure("retention cron", error);
     return Response.json({ ok: false }, { status: 500 });
   }
 }

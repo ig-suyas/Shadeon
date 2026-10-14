@@ -5,14 +5,21 @@ import { schema } from "./schema";
 
 export type Database = PgDatabase<PgQueryResultHKT, typeof schema>;
 
+/** Longest a single production query may take. */
+const QUERY_TIMEOUT_MS = 8000;
+
 let pending: Promise<Database | null> | null = null;
 
 async function connect(): Promise<Database | null> {
   if (env.DATABASE_URL) {
-    const [{ neon }, { drizzle }] = await Promise.all([
+    const [{ neon, neonConfig }, { drizzle }] = await Promise.all([
       import("@neondatabase/serverless"),
       import("drizzle-orm/neon-http"),
     ]);
+    // Every query is one HTTP request; give up on it rather than hold the
+    // function open if the database stops answering.
+    neonConfig.fetchFunction = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, { ...init, signal: AbortSignal.timeout(QUERY_TIMEOUT_MS) });
     return drizzle(neon(env.DATABASE_URL), { schema }) as unknown as Database;
   }
   // Production never falls back to a local file: forms report that they are unavailable.

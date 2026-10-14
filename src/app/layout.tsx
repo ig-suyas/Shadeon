@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     "A free library of original animated shaders with copy-ready React, JavaScript and GLSL code.",
 };
 
+// Upper bound, in seconds, for any server work under this layout, including
+// the form actions: a stuck request ends instead of running (and billing) on.
+export const maxDuration = 15;
+
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#0a0b0d" },

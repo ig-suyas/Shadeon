@@ -1,0 +1,53 @@
+# Checks every push and pull request. Security rules for this file:
+# - The token is read-only, and checkout does not keep credentials on disk.
+# - Third-party actions are pinned to full commit SHAs (the tag is in the
+#   comment); update them deliberately, never to a moving tag.
+# - Triggered by pull_request, not pull_request_target, so code from a fork
+#   never runs with this repository's secrets. No secrets are used at all.
+# - Every step fails the job; nothing is marked continue-on-error.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      # Installs exactly what package-lock.json records.
+      - run: npm ci
+
+      # Runtime dependencies must have no known high or critical advisories.
+      # (Development-only tooling is reviewed by hand; see context.md 10.3.)
+      - run: npm audit --omit=dev --audit-level=high
+
+      - run: npm run gen:catalog
+      - run: npx tsc --noEmit
+      - run: npx eslint .
+      - run: npx prettier --check .
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      # The generated catalog must match what is committed.
+      - run: git diff --exit-code -- src/shaders/registry.ts src/shaders/loaders.ts
