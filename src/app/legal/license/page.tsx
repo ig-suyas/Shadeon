@@ -33,10 +33,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.`;
 
 const thirdParty = [
-  { name: "Instrument Sans (typeface)", license: "SIL Open Font License 1.1" },
+  { name: "Geist (typeface)", license: "SIL Open Font License 1.1" },
   { name: "Geist Mono (typeface)", license: "SIL Open Font License 1.1" },
   { name: "Phosphor Icons", license: "MIT" },
   { name: "Shiki (syntax highlighting)", license: "MIT" },
+  { name: "Motion (animation)", license: "MIT" },
+  {
+    name: "Liquid particle engine of the home page hero, adapted from Sculpture Hero by Guglielmo Giannattasio (guglielmogiannattasio.it)",
+    license: "MIT",
+  },
   { name: "Next.js and React", license: "MIT" },
 ];
 

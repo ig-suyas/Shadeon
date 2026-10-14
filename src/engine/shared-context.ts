@@ -1,10 +1,15 @@
 import {
   bindTriangle,
   createContext,
+  createFeedback,
   createProgram,
   createQualityGovernor,
+  deleteFeedback,
   drawFrame,
   setUniforms,
+  usesFeedback,
+  warmUp,
+  type Feedback,
   type GL,
   type ShaderProgram,
   type ShaderSettings,
@@ -58,6 +63,8 @@ interface SlotState {
   dirty: boolean;
   ready: boolean;
   failed: boolean;
+  /** Frame memory, for shaders that declare u_prev (one per slot, at its size). */
+  feedback: Feedback | null;
 }
 
 const CENTER = [0.5, 0.5] as const;
@@ -99,6 +106,7 @@ function ensureContext(): GL | null {
     event.preventDefault();
     lost = true;
     programs.clear();
+    for (const slot of slots.values()) slot.feedback = null;
   });
   surface.addEventListener("webglcontextrestored", () => {
     lost = false;
@@ -171,7 +179,13 @@ function fail(slot: SlotState, error: unknown): void {
   slot.options.onError?.(error instanceof Error ? error : new Error(String(error)));
 }
 
-function render(slot: SlotState, context: GL, target: HTMLCanvasElement, time: number): void {
+function render(
+  slot: SlotState,
+  context: GL,
+  target: HTMLCanvasElement,
+  time: number,
+  delta = 1 / 60,
+): void {
   const ratio = config.dpr * governor.scale;
   const width = Math.max(1, Math.round(slot.cssWidth * ratio));
   const height = Math.max(1, Math.round(slot.cssHeight * ratio));
@@ -191,7 +205,19 @@ function render(slot: SlotState, context: GL, target: HTMLCanvasElement, time: n
   }
   // Programs are shared between slots, so every uniform is set on every draw.
   setUniforms(context, program, slot.settings);
-  drawFrame(context, program, { time, width, height, pointer: CENTER, scroll: 0 });
+  const frame = { time, width, height, pointer: CENTER, scroll: 0, delta };
+  if (usesFeedback(context, program)) {
+    const fresh =
+      !slot.feedback || slot.feedback.width !== width || slot.feedback.height !== height;
+    if (fresh) {
+      if (slot.feedback) deleteFeedback(context, slot.feedback);
+      slot.feedback = createFeedback(context, width, height);
+    }
+    // A still frame (reduced motion) is given history first; animated slots
+    // build theirs live, which costs nothing extra.
+    if (still && slot.feedback) warmUp(context, program, frame, slot.feedback);
+  }
+  drawFrame(context, program, frame, slot.feedback);
   // WebGL's origin is bottom-left: the viewport sits in the surface's bottom rows.
   slot.context.drawImage(target, 0, target.height - height, width, height, 0, 0, width, height);
   slot.dirty = false;
@@ -229,7 +255,8 @@ function tick(now: number): void {
     }
     if (!slot.dirty && !(animate && due)) continue;
     try {
-      render(slot, context, surface, still ? (slot.options.stillTime ?? slot.time) : slot.time);
+      const time = still ? (slot.options.stillTime ?? slot.time) : slot.time;
+      render(slot, context, surface, time, Math.min(Math.max(delta, 1 / 240), 0.05));
       drew = true;
     } catch (error) {
       fail(slot, error);
@@ -259,6 +286,7 @@ export function addSlot(canvas: HTMLCanvasElement, options: SlotOptions): Slot {
     dirty: true,
     ready: false,
     failed: false,
+    feedback: null,
   };
   slots.set(canvas, slot);
   visibility?.observe(canvas);
@@ -277,6 +305,8 @@ export function addSlot(canvas: HTMLCanvasElement, options: SlotOptions): Slot {
       wake();
     },
     destroy() {
+      if (gl && slot.feedback) deleteFeedback(gl, slot.feedback);
+      slot.feedback = null;
       slots.delete(canvas);
       visibility?.unobserve(canvas);
       sizing?.unobserve(canvas);

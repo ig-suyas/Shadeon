@@ -9,38 +9,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../src/shaders");
 
 /** Gallery order for the "Featured" sort. Mix categories so the first screen shows range. */
-const DISPLAY_ORDER = [
-  "mesh-drift",
-  "liquid-chrome",
-  "reeded-glass",
-  "ink-smoke",
-  "light-leak",
-  "prism-wave",
-  "aurora-veil",
-  "bokeh-drift",
-  "conic-sweep",
-  "silk-waves",
-  "frosted-pane",
-  "dawn-scroll",
-  "caustic-light",
-  "soft-bars",
-  "lava-blobs",
-  "cloud-cover",
-  "pointer-glow",
-  "ripple-pool",
-  "paper-pleats",
-  "contour-field",
-  "flow-strands",
-  "horizon-grid",
-  "soft-tunnel",
-  "julia-drift",
-  "plasma-bloom",
-  "dither-fade",
-  "halftone-drift",
-  "phosphor",
-  "star-drift",
-  "grain-wash",
-];
+const DISPLAY_ORDER = ["fog-veil", "event-horizon", "ink-bloom", "pointer-glow", "contour-field"];
 
 const found = readdirSync(root, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && existsSync(resolve(root, entry.name, "meta.ts")))

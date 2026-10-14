@@ -1,88 +1,166 @@
 /*
- * Design tokens (see context.md, section 4). Components use these variables,
- * or the Tailwind utilities mapped from them in globals.css; no raw colour
- * values elsewhere. The UI is cool-neutral monochrome with one accent, so the
- * shaders supply the colour.
+ * Design tokens: the single source for colour, type, space, shape, elevation
+ * and motion (context.md, section 4). Components use these variables, or the
+ * Tailwind utilities mapped from them in globals.css; no raw colour values or
+ * ad-hoc durations elsewhere. Motion values used from JavaScript live in
+ * src/lib/motion.ts and mirror the ones here.
+ *
+ * Two themes, each designed on its own terms:
+ * - "Ink" (dark): near-black with a faint blue cast. Depth comes from
+ *   hairlines and a 1px top highlight, not shadows.
+ * - "Porcelain" (light): cool off-white. Raised surfaces are lighter than the
+ *   page and carry soft shadows tinted with the ink colour.
+ * The UI stays nearly monochrome so the shaders supply the colour; the one
+ * accent is "ember", taken from the hero.
  *
  * Theme resolution: an explicit data-theme on <html> wins; otherwise the
- * system preference decides; dark is the fallback.
+ * system preference decides; dark is the fallback. The light values appear
+ * twice (explicit attribute and media query) because CSS cannot share them.
  */
 
 :root {
   color-scheme: dark;
 
-  /* Surfaces */
-  --bg: #0a0b0d;
-  --bg-raised: #121418;
-  --bg-sunken: #060708;
-  --line: #23272e;
-  --line-strong: #3a404a;
+  /* Surfaces: page, raised (cards, panels), overlay (menus, dialogs), sunken (code, wells) */
+  --bg: #0b0c0f;
+  --bg-raised: #121419;
+  --bg-overlay: #181a20;
+  --bg-sunken: #07080a;
+  /* Lines are translucent so they read the same over a shader as over a surface. */
+  --line: rgb(236 237 240 / 0.08);
+  --line-strong: rgb(236 237 240 / 0.16);
 
-  /* Text */
-  --text: #f2f3f5;
-  --text-muted: #a6acb7;
-  --text-faint: #737a86;
+  /* Text: 16.7, 8.1 and 5.2 : 1 on --bg */
+  --text: #ecedf0;
+  --text-muted: #a3a7b1;
+  --text-faint: #80848f;
 
   /* Solid (primary button): inverse of the surface */
-  --solid: #f2f3f5;
-  --solid-text: #0a0b0d;
+  --solid: #ecedf0;
+  --solid-text: #0b0c0f;
 
-  /* One accent, used sparingly: selection, confirmation, live state */
-  --accent: #cfe86a;
-  --focus: #8fbcff;
-  --danger: #ff7a6e;
+  /* One accent, "ember": selection, live state, focus, the signature moments. 7.6 : 1 on --bg */
+  --accent: #ff7a4d;
+  --accent-soft: rgb(255 122 77 / 0.14);
+  --focus: #ff7a4d;
+  --danger: #ff6b81;
 
-  /* Hero shader palette. Also paints the CSS poster shown before WebGL starts. */
-  --hero-1: #ff5a36;
-  --hero-2: #f2a53a;
-  --hero-3: #0f6e73;
-  --hero-4: #0a0b0d;
+  /* Elevation. Dark: a highlight on the top edge plus a deep, soft drop. */
+  --edge-highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 12px 32px -12px rgb(0 0 0 / 0.6);
+  --shadow-3: 0 32px 80px -24px rgb(0 0 0 / 0.75);
 
-  /* Shape: cards 10px, controls 6px, nothing else */
-  --r-control: 6px;
-  --r-card: 10px;
+  /* Scrim behind text that sits on a shader: the page colour, fading out. */
+  --scrim: rgb(11 12 15 / 0.72);
 
-  /* Motion */
-  --easing: cubic-bezier(0.22, 1, 0.36, 1);
-  --duration-fast: 140ms;
-  --duration-base: 200ms;
-  --duration-expand: 400ms;
+  /* Hero sculpture palette: page, shadow tone, accent, highlight (champagne silk). Also paints
+     the CSS poster shown before WebGL starts. */
+  --hero-1: #0b0c0f;
+  --hero-2: #2b241c;
+  --hero-3: #ff6a3d;
+  --hero-4: #ecdcbf;
+
+  /* Type: Geist (UI and display) + Geist Mono (code, readouts). Fluid display sizes. */
+  --fs-display: clamp(2.75rem, 1.6rem + 5.2vw, 6rem);
+  --fs-h1: clamp(2.25rem, 1.6rem + 2.8vw, 4rem);
+  --fs-h2: clamp(1.75rem, 1.35rem + 1.7vw, 2.75rem);
+  --fs-h3: 1.25rem;
+  --fs-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-micro: 0.75rem;
+  --ls-display: -0.045em;
+  --ls-heading: -0.03em;
+  --measure: 60ch;
+
+  /* Space: 4px base. Sections breathe (density 4). */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+  --section-y: clamp(72px, 4rem + 6vw, 160px);
+
+  /*
+   * Shape, one documented rule: anything you press or toggle (buttons, chips,
+   * tabs, segmented controls) is a pill; text fields 12px; cards and panels
+   * 16px; sheets and dialogs 24px. Nothing else.
+   */
+  --r-pill: 999px;
+  --r-control: 12px;
+  --r-card: 16px;
+  --r-sheet: 24px;
+
+  /*
+   * Motion. Enter with --ease-enter, leave faster with --ease-exit, move
+   * between two states with --ease-move. Exits use about 70% of the enter duration.
+   */
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-move: cubic-bezier(0.65, 0, 0.35, 1);
+  --easing: var(--ease-enter);
+  --duration-instant: 100ms;
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
+  --duration-expand: 480ms;
+  --duration-reveal: 700ms;
+  --stagger: 60ms;
+  --reveal-distance: 20px;
+  --hover-lift: -2px;
 
   /* Layout */
   --content-max: 1320px;
   --gutter: clamp(16px, 4vw, 40px);
   --header-height: 64px;
 
-  /* Layers: header 40, overlay 50, dialog 60 */
+  /* Layers: header 40, overlay 50, dialog 60, grain 70 (never blocks input) */
   --z-header: 40;
   --z-overlay: 50;
   --z-dialog: 60;
+  --z-grain: 70;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
 
   --bg: #f3f4f6;
-  --bg-raised: #fbfbfc;
-  --bg-sunken: #e8eaed;
-  --line: #d6d9de;
-  --line-strong: #b4b9c2;
+  --bg-raised: #fcfcfd;
+  --bg-overlay: #ffffff;
+  --bg-sunken: #e9ebef;
+  --line: rgb(14 16 21 / 0.09);
+  --line-strong: rgb(14 16 21 / 0.18);
 
-  --text: #111317;
-  --text-muted: #4a505b;
-  --text-faint: #6a707c;
+  --text: #0e1015;
+  --text-muted: #474c57;
+  --text-faint: #646a75;
 
-  --solid: #111317;
+  --solid: #0e1015;
   --solid-text: #f3f4f6;
 
-  --accent: #48620a;
-  --focus: #1d5fd0;
-  --danger: #b5301f;
+  --accent: #b63c0b;
+  --accent-soft: rgb(182 60 11 / 0.1);
+  --focus: #b63c0b;
+  --danger: #b42318;
 
-  --hero-1: #ff8a66;
-  --hero-2: #ffc861;
-  --hero-3: #6fcfc4;
-  --hero-4: #f3f4f6;
+  --edge-highlight: inset 0 1px 0 rgb(255 255 255 / 0.7);
+  --shadow-1: 0 1px 2px rgb(14 16 21 / 0.06);
+  --shadow-2: 0 12px 32px -12px rgb(28 42 85 / 0.18);
+  --shadow-3: 0 32px 80px -24px rgb(28 42 85 / 0.28);
+
+  --scrim: rgb(243 244 246 / 0.74);
+
+  /* Hero sculpture palette: darker sand silk so it reads on porcelain */
+  --hero-1: #f3f4f6;
+  --hero-2: #5e5244;
+  --hero-3: #ff8a65;
+  --hero-4: #d8c5a4;
 }
 
 @media (prefers-color-scheme: light) {
@@ -90,25 +168,34 @@
     color-scheme: light;
 
     --bg: #f3f4f6;
-    --bg-raised: #fbfbfc;
-    --bg-sunken: #e8eaed;
-    --line: #d6d9de;
-    --line-strong: #b4b9c2;
+    --bg-raised: #fcfcfd;
+    --bg-overlay: #ffffff;
+    --bg-sunken: #e9ebef;
+    --line: rgb(14 16 21 / 0.09);
+    --line-strong: rgb(14 16 21 / 0.18);
 
-    --text: #111317;
-    --text-muted: #4a505b;
-    --text-faint: #6a707c;
+    --text: #0e1015;
+    --text-muted: #474c57;
+    --text-faint: #646a75;
 
-    --solid: #111317;
+    --solid: #0e1015;
     --solid-text: #f3f4f6;
 
-    --accent: #48620a;
-    --focus: #1d5fd0;
-    --danger: #b5301f;
+    --accent: #b63c0b;
+    --accent-soft: rgb(182 60 11 / 0.1);
+    --focus: #b63c0b;
+    --danger: #b42318;
 
-    --hero-1: #ff8a66;
-    --hero-2: #ffc861;
-    --hero-3: #6fcfc4;
-    --hero-4: #f3f4f6;
+    --edge-highlight: inset 0 1px 0 rgb(255 255 255 / 0.7);
+    --shadow-1: 0 1px 2px rgb(14 16 21 / 0.06);
+    --shadow-2: 0 12px 32px -12px rgb(28 42 85 / 0.18);
+    --shadow-3: 0 32px 80px -24px rgb(28 42 85 / 0.28);
+
+    --scrim: rgb(243 244 246 / 0.74);
+
+    --hero-1: #f3f4f6;
+    --hero-2: #5e5244;
+    --hero-3: #ff8a65;
+    --hero-4: #d8c5a4;
   }
 }

@@ -17,7 +17,7 @@ export default function ShadersPage() {
       <div className="mb-8 flex flex-col gap-3">
         <h1 className="text-4xl font-semibold tracking-tighter md:text-5xl">Shaders</h1>
         <p className="text-text-muted max-w-[56ch] text-lg leading-relaxed">
-          Every preview is live. Open one to see it full size, or go straight to its code.
+          Open one to see it full size, tune it, or go straight to its code.
         </p>
       </div>
       {/*

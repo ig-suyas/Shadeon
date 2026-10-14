@@ -36,7 +36,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={theme ? `Switch to ${next} theme` : "Switch theme"}
-      className="text-text-muted hover:text-text rounded-control grid size-9 place-items-center transition-colors duration-150"
+      className="text-text-muted hover:text-text hover:bg-text/6 rounded-pill grid size-9 place-items-center transition-colors duration-(--duration-fast)"
     >
       {theme === "light" ? (
         <MoonIcon size={18} weight="regular" aria-hidden="true" />

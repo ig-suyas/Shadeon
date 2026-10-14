@@ -1,9 +1,10 @@
 /**
- * Dedicated WebGL contexts are reserved for large surfaces (hero, maximized
- * view, detail page). With the single shared gallery context this keeps the
- * whole site at three contexts or fewer.
+ * Dedicated WebGL contexts are reserved for large or interactive surfaces
+ * (hero, the landing page's interactive trio, closing band, maximized view,
+ * detail page). With the single shared gallery context this keeps the site at
+ * six contexts or fewer, inside the limit of mobile browsers (about 8).
  */
-export const MAX_DEDICATED_CONTEXTS = 2;
+export const MAX_DEDICATED_CONTEXTS = 5;
 
 interface Lease {
   evict: () => void;

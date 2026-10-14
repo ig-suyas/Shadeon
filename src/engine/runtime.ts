@@ -19,12 +19,90 @@ export interface FrameState {
   height: number;
   pointer: readonly [number, number];
   scroll: number;
+  /** 0..1: how much the pointer has been moving lately (u_activity). */
+  activity?: number;
+  /** Pointer velocity in canvas widths/heights per second (u_velocity). */
+  velocity?: readonly [number, number];
+  /** Seconds since the previous frame, at most 0.05 (u_delta); 1/60 when unknown. */
+  delta?: number;
+}
+
+/**
+ * Frame memory for shaders that declare `uniform sampler2D u_prev`. Such a
+ * shader runs twice per frame: with `u_pass` 0 it reads its previous state
+ * from u_prev and writes the next state (into a texture); with `u_pass` 1 it
+ * reads that new state from u_prev and writes the colour shown on screen.
+ * Ink, fog and trails that persist and drift are built this way.
+ */
+export interface Feedback {
+  textures: WebGLTexture[];
+  buffers: WebGLFramebuffer[];
+  width: number;
+  height: number;
+  index: number;
+}
+
+const HALF_FLOAT_OES = 0x8d61;
+
+/** Two state textures: half-float where the browser can render to it, else 8-bit. */
+export function createFeedback(gl: GL, width: number, height: number, precise = true): Feedback {
+  const webgl2 =
+    typeof WebGL2RenderingContext !== "undefined" && gl instanceof WebGL2RenderingContext;
+  let internal: number = gl.RGBA;
+  let type: number = gl.UNSIGNED_BYTE;
+  if (precise && webgl2 && gl.getExtension("EXT_color_buffer_float")) {
+    internal = (gl as WebGL2RenderingContext).RGBA16F;
+    type = (gl as WebGL2RenderingContext).HALF_FLOAT;
+  } else if (
+    precise &&
+    !webgl2 &&
+    gl.getExtension("OES_texture_half_float") &&
+    gl.getExtension("OES_texture_half_float_linear") &&
+    gl.getExtension("EXT_color_buffer_half_float")
+  ) {
+    type = HALF_FLOAT_OES;
+  }
+  const feedback: Feedback = { textures: [], buffers: [], width, height, index: 0 };
+  for (let i = 0; i < 2; i++) {
+    const texture = gl.createTexture();
+    const buffer = gl.createFramebuffer();
+    if (!texture || !buffer) throw new Error("Shadeon: could not create frame memory");
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, internal, width, height, 0, gl.RGBA, type, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, buffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    feedback.textures.push(texture);
+    feedback.buffers.push(buffer);
+  }
+  const complete = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  if (!complete && type !== gl.UNSIGNED_BYTE) {
+    deleteFeedback(gl, feedback);
+    return createFeedback(gl, width, height, false);
+  }
+  return feedback;
+}
+
+export function deleteFeedback(gl: GL, feedback: Feedback): void {
+  for (const texture of feedback.textures) gl.deleteTexture(texture);
+  for (const buffer of feedback.buffers) gl.deleteFramebuffer(buffer);
+}
+
+/** True when the shader declares u_prev, so it needs frame memory. */
+export function usesFeedback(gl: GL, shader: ShaderProgram): boolean {
+  return locate(gl, shader, "u_prev") !== null;
 }
 
 export interface MountOptions {
   /** Initial uniform values: colors, speed, scale, intensity, seed and shader extras. */
   settings?: ShaderSettings;
-  /** Upper bound for devicePixelRatio. Default 2. */
+  /** Upper bound for devicePixelRatio. Default 1.5. */
   maxDpr?: number;
   /** Cap the frame rate (for example 30). Default: display refresh rate. */
   fps?: number;
@@ -32,6 +110,8 @@ export interface MountOptions {
   paused?: boolean;
   /** Lower the render resolution automatically when frames drop. Default true. */
   adaptive?: boolean;
+  /** Transparent canvas: the shader's alpha shows the page behind it. Default false. */
+  transparent?: boolean;
   /** "respect" (default) draws one still frame when the user prefers reduced motion. */
   reducedMotion?: "respect" | "ignore";
   /** Time in seconds used for the still frame. */
@@ -50,9 +130,10 @@ export interface ShaderHandle {
 const VERTEX_SOURCE =
   "attribute vec2 a_position;void main(){gl_Position=vec4(a_position,0.0,1.0);}";
 
-export function createContext(canvas: HTMLCanvasElement): GL | null {
+/** With `transparent`, write premultiplied colour (rgb * a, a) from the shader. */
+export function createContext(canvas: HTMLCanvasElement, transparent = false): GL | null {
   const attributes: WebGLContextAttributes = {
-    alpha: false,
+    alpha: transparent,
     antialias: false,
     depth: false,
     stencil: false,
@@ -148,7 +229,17 @@ export function setUniforms(gl: GL, shader: ShaderProgram, settings: ShaderSetti
   }
 }
 
-export function drawFrame(gl: GL, shader: ShaderProgram, frame: FrameState): void {
+/**
+ * Draws one frame. With frame memory, it first steps the state (pass 0), then
+ * draws it (pass 1); `display: false` only steps (used to warm up a still frame).
+ */
+export function drawFrame(
+  gl: GL,
+  shader: ShaderProgram,
+  frame: FrameState,
+  feedback?: Feedback | null,
+  display = true,
+): void {
   gl.useProgram(shader.program);
   gl.viewport(0, 0, frame.width, frame.height);
   const time = locate(gl, shader, "u_time");
@@ -159,7 +250,51 @@ export function drawFrame(gl: GL, shader: ShaderProgram, frame: FrameState): voi
   if (pointer) gl.uniform2f(pointer, frame.pointer[0], frame.pointer[1]);
   const scroll = locate(gl, shader, "u_scroll");
   if (scroll) gl.uniform1f(scroll, frame.scroll);
+  const activity = locate(gl, shader, "u_activity");
+  if (activity) gl.uniform1f(activity, frame.activity ?? 0);
+  const delta = locate(gl, shader, "u_delta");
+  if (delta) gl.uniform1f(delta, frame.delta ?? 1 / 60);
+  const velocity = locate(gl, shader, "u_velocity");
+  if (velocity) gl.uniform2f(velocity, frame.velocity?.[0] ?? 0, frame.velocity?.[1] ?? 0);
+  const prev = locate(gl, shader, "u_prev");
+  if (!prev || !feedback) {
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    return;
+  }
+  const pass = locate(gl, shader, "u_pass");
+  const next = 1 - feedback.index;
+  gl.activeTexture(gl.TEXTURE0);
+  gl.uniform1i(prev, 0);
+  // Pass 0: previous state in, next state out.
+  gl.bindFramebuffer(gl.FRAMEBUFFER, feedback.buffers[next] ?? null);
+  gl.bindTexture(gl.TEXTURE_2D, feedback.textures[feedback.index] ?? null);
+  if (pass) gl.uniform1f(pass, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  feedback.index = next;
+  if (!display) return;
+  // Pass 1: the new state in, colour out.
+  gl.bindTexture(gl.TEXTURE_2D, feedback.textures[next] ?? null);
+  if (pass) gl.uniform1f(pass, 1);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+/**
+ * Steps frame memory through the 4 s before `time` in 60 larger steps, so a
+ * still frame (reduced motion) has history. Animated surfaces skip this and
+ * build their history live.
+ */
+export function warmUp(gl: GL, shader: ShaderProgram, frame: FrameState, feedback: Feedback): void {
+  for (const buffer of feedback.buffers) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, buffer);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  for (let i = 0; i < 60; i++) {
+    const step = { ...frame, time: frame.time - (60 - i) / 15, delta: 1 / 15 };
+    drawFrame(gl, shader, step, feedback, false);
+  }
 }
 
 export interface QualityGovernor {
@@ -221,7 +356,7 @@ export function mountShader(
   options: MountOptions = {},
 ): ShaderHandle {
   const settings: ShaderSettings = { ...options.settings };
-  const maxDpr = options.maxDpr ?? 2;
+  const maxDpr = options.maxDpr ?? 1.5;
   const frameBudget = options.fps ? 1000 / options.fps - 2 : 0;
   const governor = createQualityGovernor();
   const motion =
@@ -230,6 +365,12 @@ export function mountShader(
       : null;
   const pointer: [number, number] = [0.5, 0.5];
   const pointerTarget: [number, number] = [0.5, 0.5];
+  // Recent pointer movement, rising as it moves and fading over about a second.
+  let activity = 0;
+  let activityTarget = 0;
+  const velocity: [number, number] = [0, 0];
+  let feedback: Feedback | null = null;
+  let memory = false;
 
   let gl: GL | null = null;
   let shader: ShaderProgram | null = null;
@@ -256,12 +397,14 @@ export function mountShader(
 
   const init = (): void => {
     try {
-      gl = gl ?? createContext(canvas);
+      gl = gl ?? createContext(canvas, options.transparent);
       if (!gl) throw new Error("Shadeon: WebGL is not available");
       bindTriangle(gl);
       shader = createProgram(gl, fragment);
       setUniforms(gl, shader, settings);
       usesPointer = locate(gl, shader, "u_pointer") !== null;
+      memory = usesFeedback(gl, shader);
+      feedback = null;
       usesScroll = locate(gl, shader, "u_scroll") !== null;
       if (usesScroll) onScroll();
     } catch (error) {
@@ -276,6 +419,10 @@ export function mountShader(
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
       canvas.height = height;
+    }
+    if (gl && memory && (!feedback || feedback.width !== width || feedback.height !== height)) {
+      if (feedback) deleteFeedback(gl, feedback);
+      feedback = createFeedback(gl, width, height);
     }
     dirty = true;
   };
@@ -297,18 +444,33 @@ export function mountShader(
       const delta = Math.min(elapsed, 100);
       const speed = typeof settings.speed === "number" ? settings.speed : 1;
       time += (delta / 1000) * speed;
-      const ease = Math.min(1, delta * 0.008);
+      // Frame-rate independent easing: close 7% of the gap per 60 fps frame.
+      const ease = 1 - Math.pow(0.93, delta / 16.7);
+      const lastX = pointer[0];
+      const lastY = pointer[1];
       pointer[0] += (pointerTarget[0] - pointer[0]) * ease;
       pointer[1] += (pointerTarget[1] - pointer[1]) * ease;
+      if (delta > 0) {
+        velocity[0] += ((pointer[0] - lastX) / (delta / 1000) - velocity[0]) * 0.5;
+        velocity[1] += ((pointer[1] - lastY) / (delta / 1000) - velocity[1]) * 0.5;
+      }
+      activityTarget *= Math.pow(0.97, delta / 16.7);
+      activity += (activityTarget - activity) * ease;
     }
+    if (memory && !feedback) resize();
     if (dirty || !frameBudget || now - lastDraw >= frameBudget) {
-      drawFrame(gl, shader, {
+      const frame: FrameState = {
         time: still ? (options.stillTime ?? time) : time,
         width: canvas.width,
         height: canvas.height,
         pointer,
         scroll,
-      });
+        activity: still ? 0 : activity,
+        velocity: still ? [0, 0] : velocity,
+        delta: Math.min(elapsed, 50) / 1000 || 1 / 60,
+      };
+      if (still && feedback) warmUp(gl, shader, frame, feedback);
+      drawFrame(gl, shader, frame, feedback);
       lastDraw = now;
       dirty = false;
       if (!ready) {
@@ -328,8 +490,17 @@ export function mountShader(
     if (!usesPointer) return;
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    pointerTarget[0] = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-    pointerTarget[1] = Math.min(1, Math.max(0, 1 - (event.clientY - rect.top) / rect.height));
+    const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    const y = Math.min(1, Math.max(0, 1 - (event.clientY - rect.top) / rect.height));
+    // A tap counts as a burst of movement, so touch screens get a response too.
+    const moved =
+      event.type === "pointerdown"
+        ? 0.6
+        : Math.hypot(x - pointerTarget[0], y - pointerTarget[1]) * 4;
+    activityTarget = Math.min(1, activityTarget + moved);
+    pointerTarget[0] = x;
+    pointerTarget[1] = y;
+    schedule();
   };
 
   function onScroll(): void {
@@ -349,6 +520,7 @@ export function mountShader(
   const onContextLost = (event: Event): void => {
     event.preventDefault();
     shader = null;
+    feedback = null;
     cancelAnimationFrame(frameId);
     frameId = 0;
   };
@@ -381,6 +553,7 @@ export function mountShader(
   canvas.addEventListener("webglcontextrestored", onContextRestored);
   document.addEventListener("visibilitychange", wake);
   window.addEventListener("pointermove", onPointer, { passive: true });
+  window.addEventListener("pointerdown", onPointer, { passive: true });
   window.addEventListener("scroll", onScroll, { passive: true });
   motion?.addEventListener("change", onMotionChange);
 
@@ -407,10 +580,13 @@ export function mountShader(
       canvas.removeEventListener("webglcontextrestored", onContextRestored);
       document.removeEventListener("visibilitychange", wake);
       window.removeEventListener("pointermove", onPointer);
+      window.removeEventListener("pointerdown", onPointer);
       window.removeEventListener("scroll", onScroll);
       motion?.removeEventListener("change", onMotionChange);
+      if (gl && feedback) deleteFeedback(gl, feedback);
       if (gl && shader) gl.deleteProgram(shader.program);
       shader = null;
+      feedback = null;
     },
   };
 }

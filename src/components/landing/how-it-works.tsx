@@ -4,7 +4,7 @@ import { TuneDemo } from "./tune-demo";
 const steps = [
   {
     title: "Pick",
-    body: "Find a look in the gallery. Every card is live, so what you see is what you get.",
+    body: "Find a look in the gallery and open it full size.",
   },
   {
     title: "Tune",

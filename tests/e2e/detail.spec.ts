@@ -15,8 +15,8 @@ test.describe("shader page", () => {
     page,
     isMobile,
   }) => {
-    await page.goto("/shaders/mesh-drift");
-    await expect(page.getByRole("heading", { level: 1, name: "Mesh Drift" })).toBeVisible();
+    await page.goto("/shaders/pointer-glow");
+    await expect(page.getByRole("heading", { level: 1, name: "Pointer Glow" })).toBeVisible();
     await expect(page.getByTestId("detail-code")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Customize" })).toBeVisible();
     await expect(page.getByRole("slider", { name: "Speed" })).toBeVisible();
@@ -41,7 +41,7 @@ test.describe("shader page", () => {
   });
 
   test("the code updates live as controls change", async ({ page }) => {
-    await page.goto("/shaders/mesh-drift");
+    await page.goto("/shaders/pointer-glow");
     const code = page.getByTestId("code-panel").getByRole("tabpanel");
     await expect(code).toContainText("speed = 1,");
 
@@ -51,14 +51,14 @@ test.describe("shader page", () => {
     await expect(code).toContainText("speed = 3,");
     await expect(page).toHaveURL(/speed=3/);
 
-    await page.getByRole("button", { name: "Lagoon" }).click();
-    await expect(code).toContainText('"#7df9d0"');
-    await expect(page.getByRole("button", { name: "Lagoon" })).toHaveAttribute(
+    await page.getByRole("button", { name: "Candle" }).click();
+    await expect(code).toContainText('"#ff9a4d"');
+    await expect(page.getByRole("button", { name: "Candle" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
 
-    const hex = page.getByRole("textbox", { name: "Warm A", exact: true });
+    const hex = page.getByRole("textbox", { name: "Lamp light", exact: true });
     await hex.fill("#123456");
     await expect(code).toContainText('"#123456"');
     await hex.fill("nope");
@@ -67,14 +67,14 @@ test.describe("shader page", () => {
   });
 
   test("randomize changes the settings and reset restores the defaults", async ({ page }) => {
-    await page.goto("/shaders/aurora-veil");
+    await page.goto("/shaders/ink-bloom");
     const reset = page.getByRole("button", { name: "Reset" });
     await expect(reset).toBeDisabled();
     await page.getByRole("button", { name: "Randomize" }).click();
     await expect(page).toHaveURL(/[?&]c=/);
     await expect(reset).toBeEnabled();
     await reset.click();
-    await expect(page).toHaveURL(/\/shaders\/aurora-veil$/);
+    await expect(page).toHaveURL(/\/shaders\/ink-bloom$/);
     await expect(reset).toBeDisabled();
   });
 
@@ -92,23 +92,25 @@ test.describe("shader page", () => {
 
   test("hostile query values are ignored", async ({ page }) => {
     await page.goto(
-      "/shaders/mesh-drift?c=%3Cscript%3E-zzzzzz&speed=1e999&scale=%22%3E%3Cimg%20src=x%20onerror=alert(1)%3E",
+      "/shaders/pointer-glow?c=%3Cscript%3E-zzzzzz&speed=1e999&scale=%22%3E%3Cimg%20src=x%20onerror=alert(1)%3E",
     );
     await expect(page.getByRole("slider", { name: "Speed" })).toHaveValue("1");
-    await expect(page.getByRole("textbox", { name: "Warm A", exact: true })).toHaveValue("#ff6b3d");
+    await expect(page.getByRole("textbox", { name: "Lamp light", exact: true })).toHaveValue(
+      "#7aa7ff",
+    );
     expect(await page.locator("img[src=x]").count()).toBe(0);
   });
 
   test("the viewer's Customize link carries the chosen preset to the shader page", async ({
     page,
   }) => {
-    await page.goto("/shaders?s=mesh-drift");
+    await page.goto("/shaders?s=pointer-glow");
     const dialog = page.getByTestId("shader-viewer");
     await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: "Orchid" }).click();
+    await dialog.getByRole("button", { name: "Emerald" }).click();
     await dialog.getByTestId("viewer-customize").click();
-    await expect(page).toHaveURL(/\/shaders\/mesh-drift\?c=ff8fd0/);
-    await expect(page.getByRole("button", { name: "Orchid" })).toHaveAttribute(
+    await expect(page).toHaveURL(/\/shaders\/pointer-glow\?c=04100c/);
+    await expect(page.getByRole("button", { name: "Emerald" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );

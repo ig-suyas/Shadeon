@@ -5,6 +5,7 @@
   --color-bg: var(--bg);
   --color-bg-raised: var(--bg-raised);
   --color-bg-sunken: var(--bg-sunken);
+  --color-bg-overlay: var(--bg-overlay);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-text: var(--text);
@@ -13,11 +14,33 @@
   --color-solid: var(--solid);
   --color-solid-text: var(--solid-text);
   --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-focus: var(--focus);
   --color-danger: var(--danger);
+  --color-scrim: var(--scrim);
+  --radius-pill: var(--r-pill);
   --radius-control: var(--r-control);
   --radius-card: var(--r-card);
-  --ease-out: var(--easing);
+  --radius-sheet: var(--r-sheet);
+  --shadow-raised: var(--edge-highlight), var(--shadow-1);
+  --shadow-float: var(--edge-highlight), var(--shadow-2);
+  --shadow-lifted: var(--edge-highlight), var(--shadow-3);
+  /* Tailwind's own ease names, pointed at our curves (raw tokens use other names: no cycles). */
+  --ease-out: var(--ease-enter);
+  --ease-in: var(--ease-exit);
+  --ease-in-out: var(--ease-move);
+  --text-display: var(--fs-display);
+  --text-display--line-height: 0.98;
+  --text-h1: var(--fs-h1);
+  --text-h1--line-height: 1.02;
+  --text-h2: var(--fs-h2);
+  --text-h2--line-height: 1.08;
+  --text-h3: var(--fs-h3);
+  --text-h3--line-height: 1.3;
+  --text-lead: var(--fs-lead);
+  --text-lead--line-height: 1.6;
+  --tracking-display: var(--ls-display);
+  --tracking-heading: var(--ls-heading);
   --font-sans: var(--font-display), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-code), ui-monospace, "SFMono-Regular", monospace;
   --container-content: var(--content-max);
@@ -35,14 +58,27 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* In the base layer, so utilities such as whitespace-nowrap still win. */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: var(--text);
-  color: var(--bg);
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+  color: var(--text);
 }
 
 /* Page gutter + max width, used by every section. */
@@ -60,7 +96,7 @@ body {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(var(--reveal-distance));
   }
   to {
     opacity: 1;
@@ -80,13 +116,24 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   /* Hero load-in: sequence tells the eye where to go (headline, text, actions). */
   .enter {
-    animation: rise 700ms var(--easing) both;
-    animation-delay: calc(var(--i, 0) * 90ms);
+    animation: rise var(--duration-reveal) var(--ease-enter) both;
+    animation-delay: calc(var(--i, 0) * var(--stagger) * 1.5);
   }
 
   /* The headline is the LCP element, so it moves but never starts invisible. */
   .enter-solid {
-    animation: settle 700ms var(--easing) both;
+    animation: settle var(--duration-reveal) var(--ease-enter) both;
+  }
+
+  /* Hover lift for things you can open (cards, plan columns). Pointer devices only. */
+  @media (hover: hover) {
+    .lift {
+      transition: transform var(--duration-base) var(--ease-enter);
+    }
+
+    .lift:hover {
+      transform: translateY(var(--hover-lift));
+    }
   }
 
   /* Sections ease in as they scroll into view, where the browser supports it. */

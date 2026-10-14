@@ -14,7 +14,18 @@ import {
   settingsToQuery,
 } from "../settings";
 
-const STANDARD_UNIFORMS = ["time", "resolution", "pointer", "scroll"];
+/** Uniforms the runtime provides (not described by metadata). */
+const STANDARD_UNIFORMS = [
+  "time",
+  "resolution",
+  "pointer",
+  "scroll",
+  "activity",
+  "velocity",
+  "delta",
+  "prev",
+  "pass",
+];
 
 describe("catalog", () => {
   it("has unique ids and a loader for every shader", () => {

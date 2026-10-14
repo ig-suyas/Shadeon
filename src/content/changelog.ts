@@ -9,19 +9,18 @@ export interface Release {
 export const releases: Release[] = [
   {
     date: "2026-10-14",
-    title: "Thirty shaders",
+    title: "Interactive shaders",
     changes: [
-      "Twenty-seven new shaders, from soft gradients and frosted glass to clouds, ink, chrome, contour maps and fractals.",
-      "Shaders that react to the pointer (Pointer Glow, Ripple Pool, Lava Blobs, Star Drift) and to scrolling (Dawn Scroll, Horizon Grid).",
-      "Four presets for every new shader.",
+      "Every shader now responds to the cursor. Three new ones: Fog Veil (wipe through rolling fog), Ink Bloom (pour ink into swirling water) and Event Horizon (a black hole that bends the stars).",
+      "Shaders can now remember their previous frame, which is what lets fog, ink and trails persist and drift.",
+      "A new home page with a liquid sculpture you can stir, and a simpler gallery with one category filter.",
     ],
   },
   {
     date: "2026-10-14",
     title: "First preview",
     changes: [
-      "Three shaders: Mesh Drift, Aurora Veil and Contour Field.",
-      "Gallery with search, categories and tags, and a full-screen view for each shader.",
+      "Gallery with a full-screen view for each shader.",
       "Code for every shader as a React TS component, plain JavaScript and raw GLSL.",
       "A page per shader with a live customizer, presets, randomize and shareable links.",
       "Install with the shadcn CLI from a registry file per shader.",

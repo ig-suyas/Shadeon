@@ -4,12 +4,12 @@ import { ThemedShader } from "@/components/shader/themed-shader";
 import { button } from "@/components/ui/button";
 import type { ShaderMeta } from "@/shaders/schema";
 
-const COLOR_VARS = ["--bg", "--line-strong", "--accent"] as const;
-const SETTINGS = { speed: 0.8, scale: 2.4, intensity: 1, seed: 87, levels: 24 };
+const COLOR_VARS = ["--bg", "--accent", "--hero-4"] as const;
+const SETTINGS = { speed: 0.8, scale: 1.2, intensity: 1.3, seed: 52 };
 
 /**
- * Closing call to action over a contour field drawn in the page's own tokens,
- * so it belongs to both themes. The pointer raises a hill in the terrain.
+ * Closing call to action over Pointer Glow in the page's own tokens, so it
+ * belongs to both themes: a lamp follows the cursor across the wall.
  */
 export function Closing({ shader }: { shader: ShaderMeta }) {
   return (

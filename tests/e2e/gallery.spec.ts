@@ -26,12 +26,12 @@ test.describe("gallery", () => {
   test("open a shader, open its code, switch tabs, copy", async ({ page, browserName }) => {
     await recordClipboard(page, browserName);
     await openGallery(page);
-    await page.getByRole("link", { name: "Open Mesh Drift" }).click();
+    await page.getByRole("link", { name: "Open Pointer Glow" }).click();
 
     const dialog = page.locator(viewer);
     await expect(dialog).toBeVisible();
-    await expect(page).toHaveURL(/[?&]s=mesh-drift/);
-    await expect(dialog.getByRole("heading", { name: "Mesh Drift" })).toBeVisible();
+    await expect(page).toHaveURL(/[?&]s=pointer-glow/);
+    await expect(dialog.getByRole("heading", { name: "Pointer Glow" })).toBeVisible();
 
     // The Code button sits in the viewer's header, right above the shader.
     await dialog.getByTestId("viewer-code").click();
@@ -41,7 +41,7 @@ test.describe("gallery", () => {
       "aria-selected",
       "true",
     );
-    await expect(panel.getByRole("tabpanel")).toContainText("export function MeshDrift");
+    await expect(panel.getByRole("tabpanel")).toContainText("export function PointerGlow");
     await expect(panel).toContainText("npx shadcn@latest add");
 
     await panel.getByRole("tab", { name: "GLSL" }).click();
@@ -63,11 +63,11 @@ test.describe("gallery", () => {
 
   test("the card's Code button opens the viewer with code showing", async ({ page }) => {
     await openGallery(page);
-    await page.getByRole("link", { name: "Get the code for Aurora Veil" }).click();
+    await page.getByRole("link", { name: "Get the code for Ink Bloom" }).click();
     await expect(page.locator(viewer)).toBeVisible();
-    await expect(page).toHaveURL(/s=aurora-veil&code=react/);
+    await expect(page).toHaveURL(/s=ink-bloom&code=react/);
     await expect(page.getByTestId("code-panel").getByRole("tabpanel")).toContainText(
-      "export function AuroraVeil",
+      "export function InkBloom",
     );
   });
 
@@ -96,7 +96,7 @@ test.describe("gallery", () => {
   test("keyboard: focus is trapped, arrows step between shaders", async ({ page, isMobile }) => {
     test.skip(isMobile, "hardware keyboard flow");
     await openGallery(page);
-    await page.getByRole("link", { name: "Open Mesh Drift" }).focus();
+    await page.getByRole("link", { name: "Open Pointer Glow" }).focus();
     await page.keyboard.press("Enter");
     const dialog = page.locator(viewer);
     await expect(dialog).toBeVisible();
@@ -115,12 +115,12 @@ test.describe("gallery", () => {
 
     await dialog.getByTestId("viewer-code").focus();
     await page.keyboard.press("ArrowRight");
-    await expect(page).not.toHaveURL(/s=mesh-drift/);
+    await expect(page).not.toHaveURL(/s=pointer-glow/);
     await expect(page).toHaveURL(/[?&]s=/);
-    await expect(dialog.getByRole("heading", { level: 2 })).not.toHaveText("Mesh Drift");
+    await expect(dialog.getByRole("heading", { level: 2 })).not.toHaveText("Pointer Glow");
     await dialog.getByTestId("viewer-code").focus();
     await page.keyboard.press("ArrowLeft");
-    await expect(page).toHaveURL(/s=mesh-drift/);
+    await expect(page).toHaveURL(/s=pointer-glow/);
   });
 
   test("a deep link opens the shader and its code directly", async ({ page }) => {
@@ -141,31 +141,34 @@ test.describe("gallery", () => {
     await expect(page.locator(viewer)).toHaveCount(0);
   });
 
-  test("search, category and tag filters narrow the grid and update the URL", async ({ page }) => {
+  test("the category filter narrows the grid and updates the URL", async ({ page }) => {
     await openGallery(page);
     const cards = page.locator("[data-card]");
     const total = await cards.count();
+    const filter = page.getByRole("combobox", { name: "Filter by category" });
 
-    await page.getByRole("searchbox", { name: "Search shaders" }).fill("aurora");
-    await expect(cards).toHaveCount(1);
-    await expect(page).toHaveURL(/q=aurora/);
-    await expect(page.getByTestId("result-count")).toContainText(`1 of ${total}`);
-
-    await page.getByRole("button", { name: "Clear filters" }).click();
-    await expect(cards).toHaveCount(total);
-    await expect(page.getByRole("searchbox", { name: "Search shaders" })).toHaveValue("");
-
-    await page
-      .getByRole("group", { name: "Category" })
-      .getByRole("button", { name: "lines" })
-      .click();
+    await filter.selectOption("lines");
     await expect(page).toHaveURL(/cat=lines/);
     // Order follows DISPLAY_ORDER, which changes as shaders are added, so check
     // membership rather than position.
     await expect(page.locator('[data-card="contour-field"]')).toHaveCount(1);
-    await expect(page.locator('[data-card="aurora-veil"]')).toHaveCount(0);
+    await expect(page.locator('[data-card="pointer-glow"]')).toHaveCount(0);
+    expect(await cards.count()).toBeLessThan(total);
 
-    await page.getByRole("searchbox", { name: "Search shaders" }).fill("zzzz-no-match");
+    await page.getByRole("button", { name: "Clear" }).click();
+    await expect(cards).toHaveCount(total);
+    await expect(filter).toHaveValue("");
+  });
+
+  test("cards show only the shader, its name and the Code button", async ({ page }) => {
+    await openGallery(page);
+    const card = page.locator("[data-card]").first();
+    await expect(card.locator("p")).toHaveCount(0);
+    await expect(page.getByRole("searchbox")).toHaveCount(0);
+  });
+
+  test("an old link that matches nothing offers to clear it", async ({ page }) => {
+    await openGallery(page, "/shaders?q=zzzz-no-match");
     await expect(
       page.getByRole("heading", { name: "No shaders match those filters." }),
     ).toBeVisible();
@@ -188,7 +191,7 @@ test.describe("gallery", () => {
   test("swipe down closes the viewer on touch screens", async ({ page, isMobile }) => {
     test.skip(!isMobile, "touch gesture");
     await openGallery(page);
-    await page.getByRole("link", { name: "Open Mesh Drift" }).tap();
+    await page.getByRole("link", { name: "Open Pointer Glow" }).tap();
     const dialog = page.locator(viewer);
     await expect(dialog).toBeVisible();
     await page.waitForTimeout(500); // let the open animation finish
@@ -215,21 +218,22 @@ test.describe("landing", () => {
       "Animated shaders, ready to paste.",
     );
     const browse = page.locator("main").getByRole("link", { name: "Browse shaders" }).first();
-    const copy = page.getByRole("button", { name: "Copy a shader" });
+    const docs = page.locator("main").getByRole("link", { name: "Read the docs" });
     await expect(browse).toBeInViewport();
-    await expect(copy).toBeInViewport();
+    await expect(docs).toBeInViewport();
   });
 
-  test("Copy a shader puts a complete React component on the clipboard", async ({
+  test("hero sculpture paints a poster, then goes live without moving the copy", async ({
     page,
-    browserName,
   }) => {
-    await recordClipboard(page, browserName);
     await page.goto("/");
-    await page.getByRole("button", { name: "Copy a shader" }).click();
-    await expect(page.getByRole("status").first()).toHaveText("Copied to clipboard");
-    const copied = await readCopied(page, browserName);
-    expect(copied).toContain('"use client";');
-    expect(copied).toContain("export function MeshDrift");
+    const heading = page.getByRole("heading", { level: 1 });
+    const before = await heading.boundingBox();
+    const sculpture = page.locator("[data-shader=hero-sculpture]");
+    await expect(sculpture).toHaveAttribute("data-status", "live", { timeout: 15_000 });
+    // Within a pixel: the headline's entrance animation may still be settling.
+    const after = await heading.boundingBox();
+    expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(1);
+    expect(after?.height).toBe(before?.height);
   });
 });

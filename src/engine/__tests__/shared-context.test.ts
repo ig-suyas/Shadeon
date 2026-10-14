@@ -175,7 +175,8 @@ describe("shared context", () => {
 describe("dedicated context budget", () => {
   it("evicts the oldest holder beyond the limit", () => {
     const evicted: number[] = [];
-    const releases = [0, 1, 2].map((id) => acquireDedicated(() => evicted.push(id)));
+    const ids = Array.from({ length: MAX_DEDICATED_CONTEXTS + 1 }, (_, id) => id);
+    const releases = ids.map((id) => acquireDedicated(() => evicted.push(id)));
     expect(evicted).toEqual([0]);
     expect(dedicatedCount()).toBe(MAX_DEDICATED_CONTEXTS);
     for (const release of releases) release();
@@ -195,7 +196,7 @@ describe("device profile", () => {
   it("switches to low power for Save-Data or weak hardware", () => {
     expect(profileFor({ saveData: true }).lowPower).toBe(true);
     expect(profileFor({ deviceMemory: 2 }).lowPower).toBe(true);
-    expect(profileFor({ hardwareConcurrency: 4 })).toMatchObject({ cardFps: 30, surfaceDpr: 1.5 });
+    expect(profileFor({ hardwareConcurrency: 4 })).toMatchObject({ cardFps: 30, surfaceDpr: 1.25 });
   });
 
   it("lets an explicit user choice override the heuristics", () => {

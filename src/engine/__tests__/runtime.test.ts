@@ -216,6 +216,84 @@ describe("mountShader lifecycle", () => {
     expect(canvas.height).toBe(450);
   });
 
+  it("caps the pixel ratio at 1.5 by default", () => {
+    vi.stubGlobal("devicePixelRatio", 3);
+    const { gl } = createFakeGL();
+    const canvas = createCanvas(gl, { width: 400, height: 300 });
+    mountShader(canvas, FRAGMENT);
+    browser.intersect(canvas, true);
+    expect(canvas.width).toBe(600);
+  });
+
+  it("asks for an alpha channel only when the canvas is transparent", () => {
+    const attributes = (transparent?: boolean): unknown => {
+      const { gl } = createFakeGL();
+      const canvas = createCanvas(gl);
+      const getContext = vi.spyOn(canvas, "getContext");
+      mountShader(canvas, FRAGMENT, transparent === undefined ? {} : { transparent });
+      browser.intersect(canvas, true);
+      return getContext.mock.calls[0]?.[1];
+    };
+    expect(attributes()).toMatchObject({ alpha: false });
+    expect(attributes(true)).toMatchObject({ alpha: true });
+  });
+
+  it("raises u_activity while the pointer moves and lets it fade when it stops", () => {
+    const { gl, state } = createFakeGL();
+    const canvas = createCanvas(gl, { width: 400, height: 300 });
+    canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 300 }) as DOMRect;
+    mountShader(canvas, FRAGMENT);
+    browser.intersect(canvas, true);
+    let now = 0;
+    for (let i = 0; i < 20; i++) {
+      window.dispatchEvent(
+        new MouseEvent("pointermove", { clientX: 100 + i * 10, clientY: 150 }) as PointerEvent,
+      );
+      browser.frame((now += 16.7));
+    }
+    const moving = state.uniforms.get("u_activity") as number;
+    expect(moving).toBeGreaterThan(0.3);
+    for (let i = 0; i < 300; i++) browser.frame((now += 16.7));
+    expect(state.uniforms.get("u_activity") as number).toBeLessThan(moving * 0.05);
+  });
+
+  it("steps frame memory, then draws it, for shaders that declare u_prev", () => {
+    const { gl, state } = createFakeGL();
+    state.memory = true;
+    const canvas = createCanvas(gl);
+    mountShader(canvas, FRAGMENT);
+    browser.intersect(canvas, true);
+    browser.frame(16);
+    // One frame = pass 0 into a texture, then pass 1 to the screen.
+    expect(draws(state.calls)).toBe(2);
+    expect(state.calls).toContain("bindFramebuffer");
+    expect(state.uniforms.get("u_pass")).toBe(1);
+    expect(state.uniforms.has("u_delta")).toBe(true);
+  });
+
+  it("warms up frame memory before a reduced-motion still frame", () => {
+    browser.restore();
+    browser = installBrowser({ reducedMotion: true });
+    const { gl, state } = createFakeGL();
+    state.memory = true;
+    const canvas = createCanvas(gl);
+    mountShader(canvas, FRAGMENT, { stillTime: 5 });
+    browser.intersect(canvas, true);
+    browser.frame(16);
+    // 60 warm-up steps (pass 0 only) plus the final two passes.
+    expect(draws(state.calls)).toBe(62);
+  });
+
+  it("does not allocate frame memory for ordinary shaders", () => {
+    const { gl, state } = createFakeGL();
+    const canvas = createCanvas(gl);
+    mountShader(canvas, FRAGMENT);
+    browser.intersect(canvas, true);
+    browser.frame(16);
+    expect(draws(state.calls)).toBe(1);
+    expect(state.calls).not.toContain("bindFramebuffer");
+  });
+
   it("maps settings to uniforms", () => {
     const { gl, state } = createFakeGL();
     const canvas = createCanvas(gl);

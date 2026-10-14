@@ -35,7 +35,7 @@ export function SiteFooter() {
     <footer className="border-line border-t">
       <div className="shell grid grid-cols-2 gap-10 py-14 sm:grid-cols-3 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div className="col-span-full flex flex-col gap-4 md:col-span-1">
-          <Wordmark />
+          <Wordmark id="mark-footer" />
           <p className="text-text-muted max-w-[34ch] text-sm leading-relaxed">
             Original animated shaders for the web. Free to use in personal and commercial projects
             under the MIT license.

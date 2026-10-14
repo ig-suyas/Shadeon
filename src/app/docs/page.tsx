@@ -22,14 +22,14 @@ const sections = [
   { id: "license", label: "License" },
 ];
 
-const INSTALL = `npx shadcn@latest add "${SITE_URL}/r/mesh-drift.json?token=<from the code panel>"`;
+const INSTALL = `npx shadcn@latest add "${SITE_URL}/r/pointer-glow.json?token=<from the code panel>"`;
 
-const NEXT_USAGE = `import { MeshDrift } from "@/components/shadeon/mesh-drift";
+const NEXT_USAGE = `import { PointerGlow } from "@/components/shadeon/pointer-glow";
 
 export default function Page() {
   return (
     <section className="relative isolate min-h-[100dvh] overflow-hidden">
-      <MeshDrift className="absolute inset-0 -z-10" />
+      <PointerGlow className="absolute inset-0 -z-10" />
       <div className="p-10">
         <h1>Your content</h1>
       </div>
@@ -37,19 +37,19 @@ export default function Page() {
   );
 }`;
 
-const VITE_USAGE = `import { MeshDrift } from "./components/mesh-drift";
+const VITE_USAGE = `import { PointerGlow } from "./components/pointer-glow";
 
 export function Hero() {
   return (
     <section style={{ position: "relative", isolation: "isolate", minHeight: "100vh" }}>
-      <MeshDrift style={{ position: "absolute", inset: 0, zIndex: -1 }} />
+      <PointerGlow style={{ position: "absolute", inset: 0, zIndex: -1 }} />
       <h1>Your content</h1>
     </section>
   );
 }`;
 
 const HTML_USAGE = `<section class="hero">
-  <canvas id="mesh-drift"></canvas>
+  <canvas id="pointer-glow"></canvas>
   <h1>Your content</h1>
 </section>
 
@@ -59,7 +59,7 @@ const HTML_USAGE = `<section class="hero">
     isolation: isolate;
     min-height: 100vh;
   }
-  #mesh-drift {
+  #pointer-glow {
     position: absolute;
     inset: 0;
     z-index: -1;
@@ -69,18 +69,18 @@ const HTML_USAGE = `<section class="hero">
   }
 </style>
 
-<script type="module" src="./mesh-drift.js"></script>`;
+<script type="module" src="./pointer-glow.js"></script>`;
 
-const HTML_CONTROL = `import { shader } from "./mesh-drift.js";
+const HTML_CONTROL = `import { shader } from "./pointer-glow.js";
 
-shader.set({ speed: 2, colors: ["#ff6b3d", "#ffc56b", "#3a2bd9", "#0b1026"] });
+shader.set({ speed: 2, colors: ["#0c0705", "#ff9a4d", "#fff1c4"] });
 shader.pause();
 shader.play();
 shader.destroy();`;
 
-const PROPS_USAGE = `<MeshDrift
+const PROPS_USAGE = `<PointerGlow
   className="absolute inset-0 -z-10"
-  colors={["#7df9d0", "#1fb6c9", "#0d3b8c", "#041226"]}
+  colors={["#04100c", "#35d6a0", "#e6fff5"]}
   speed={0.6}
   scale={1.3}
   seed={42}
@@ -131,7 +131,7 @@ export default function DocsPage() {
           <h2 id="nextjs">Next.js</h2>
           <ol>
             <li>
-              Save the React TS code as <code>components/shadeon/mesh-drift.tsx</code>, or run the
+              Save the React TS code as <code>components/shadeon/pointer-glow.tsx</code>, or run the
               command above.
             </li>
             <li>
@@ -149,15 +149,15 @@ export default function DocsPage() {
           <h2 id="vite">Vite and React</h2>
           <p>
             The same file works in any React 18 or 19 project. Save it as{" "}
-            <code>src/components/mesh-drift.tsx</code>. The <code>&quot;use client&quot;</code> line
-            at the top is ignored outside frameworks that use it. Without Tailwind, position it with
-            the <code>style</code> prop.
+            <code>src/components/pointer-glow.tsx</code>. The <code>&quot;use client&quot;</code>{" "}
+            line at the top is ignored outside frameworks that use it. Without Tailwind, position it
+            with the <code>style</code> prop.
           </p>
           <CodeBlock code={VITE_USAGE} lang="tsx" title="src/Hero.tsx" />
 
           <h2 id="html">Plain HTML</h2>
           <p>
-            Save the JavaScript version as <code>mesh-drift.js</code> next to your page. It looks
+            Save the JavaScript version as <code>pointer-glow.js</code> next to your page. It looks
             for a canvas whose id is the shader id.
           </p>
           <CodeBlock code={HTML_USAGE} lang="html" title="index.html" />

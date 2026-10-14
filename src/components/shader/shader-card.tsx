@@ -32,10 +32,16 @@ interface ShaderCardProps {
   detail?: boolean;
   /** Heading level of the name: one below the section the card sits in. */
   headingLevel?: 2 | 3;
+  /**
+   * Give the card its own WebGL context so the shader follows the pointer.
+   * Costly: only for a few cards on a page (the context budget evicts beyond 5).
+   */
+  interactive?: boolean;
 }
 
 /**
- * A live shader with its name and a Code button directly beneath it. The Code
+ * A live shader with its name and a Code button directly beneath it, nothing
+ * else (no category or tag badges: filters live in one place in the gallery). The Code
  * button is always visible: it never depends on hover, so it works on touch.
  */
 export function ShaderCard({
@@ -45,6 +51,7 @@ export function ShaderCard({
   onOpen,
   detail = false,
   headingLevel = 3,
+  interactive = false,
 }: ShaderCardProps) {
   const Heading = headingLevel === 2 ? "h2" : "h3";
   const intercept =
@@ -70,13 +77,14 @@ export function ShaderCard({
         aria-label={`Open ${shader.name}`}
         className="relative flex min-h-0 flex-1 focus-visible:-outline-offset-2"
       >
-        <ShaderCanvas shader={shader} className={cn("w-full flex-1", surfaceClassName)} />
+        <ShaderCanvas
+          shader={shader}
+          mode={interactive ? "dedicated" : "shared"}
+          className={cn("w-full flex-1", surfaceClassName)}
+        />
       </Link>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <div className="min-w-0">
-          <Heading className="truncate text-[15px] font-medium">{shader.name}</Heading>
-          <p className="text-text-faint font-mono text-xs">{shader.category}</p>
-        </div>
+        <Heading className="min-w-0 truncate text-[15px] font-medium">{shader.name}</Heading>
         <Link
           href={detail ? `${detailHref(shader.id)}#code` : shaderHref(shader.id, true)}
           onClick={intercept(true)}

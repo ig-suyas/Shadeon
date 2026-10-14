@@ -4,8 +4,9 @@ import { ShaderCard } from "@/components/shader/shader-card";
 import type { ShaderMeta } from "@/shaders/schema";
 
 /**
- * Three live shaders: one large, two stacked. On small screens they become a
- * single column of 4:3 cards.
+ * Three interactive shaders: one large, two stacked, each on its own WebGL
+ * context so it follows the cursor. On small screens they become a single
+ * column of 4:3 cards.
  */
 export function Featured({ shaders }: { shaders: ShaderMeta[] }) {
   const [lead, ...rest] = shaders.slice(0, 3);
@@ -17,16 +18,16 @@ export function Featured({ shaders }: { shaders: ShaderMeta[] }) {
           id="featured-title"
           className="text-3xl leading-tight font-semibold tracking-tight md:text-5xl"
         >
-          Live, not screenshots.
+          Interactive shaders
         </h2>
         <p className="text-text-muted max-w-[52ch] text-lg leading-relaxed">
-          Every preview on this site is the real shader running in your browser. Open one to see it
-          full size.
+          Each one responds to your cursor. Open one to tune it and copy the code.
         </p>
       </div>
       <div className="mt-10 grid gap-4 md:h-[620px] md:grid-cols-[1.65fr_1fr] md:grid-rows-2">
         <ShaderCard
           shader={lead}
+          interactive
           className="reveal md:row-span-2"
           surfaceClassName="aspect-[4/3] md:aspect-auto"
         />
@@ -34,6 +35,7 @@ export function Featured({ shaders }: { shaders: ShaderMeta[] }) {
           <ShaderCard
             key={shader.id}
             shader={shader}
+            interactive
             className="reveal"
             surfaceClassName="aspect-[4/3] md:aspect-auto"
           />

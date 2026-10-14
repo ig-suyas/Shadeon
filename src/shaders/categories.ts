@@ -15,6 +15,9 @@ export const CATEGORIES = [
   "plasma",
   "fractal",
   "interactive",
+  "fog",
+  "fluid",
+  "space",
 ] as const;
 
 export type ShaderCategory = (typeof CATEGORIES)[number];

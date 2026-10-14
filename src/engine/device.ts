@@ -29,12 +29,12 @@ export function profileFor(signals: DeviceSignals): DeviceProfile {
     (signals.hardwareConcurrency !== undefined && signals.hardwareConcurrency <= 4);
   const lowPower = signals.userLowPower ?? weak;
   if (lowPower) {
-    return { lowPower: true, surfaceDpr: 1.5, cardDpr: 1, cardFps: 30, maxActiveCards: 4 };
+    return { lowPower: true, surfaceDpr: 1.25, cardDpr: 1, cardFps: 30, maxActiveCards: 4 };
   }
   if (signals.coarsePointer) {
-    return { lowPower: false, surfaceDpr: 2, cardDpr: 1, cardFps: 30, maxActiveCards: 6 };
+    return { lowPower: false, surfaceDpr: 1.5, cardDpr: 1, cardFps: 30, maxActiveCards: 6 };
   }
-  return { lowPower: false, surfaceDpr: 2, cardDpr: 1, cardFps: 0, maxActiveCards: 12 };
+  return { lowPower: false, surfaceDpr: 1.5, cardDpr: 1, cardFps: 0, maxActiveCards: 12 };
 }
 
 export function readDeviceSignals(): DeviceSignals {

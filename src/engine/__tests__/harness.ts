@@ -9,10 +9,12 @@ export interface FakeGL {
   calls: string[];
   uniforms: Map<string, unknown>;
   failCompile: boolean;
+  /** When true, the program declares u_prev (it uses frame memory). */
+  memory: boolean;
 }
 
 export function createFakeGL(): { gl: Record<string, unknown>; state: FakeGL } {
-  const state: FakeGL = { calls: [], uniforms: new Map(), failCompile: false };
+  const state: FakeGL = { calls: [], uniforms: new Map(), failCompile: false, memory: false };
   const constants: Record<string, number> = {
     VERTEX_SHADER: 1,
     FRAGMENT_SHADER: 2,
@@ -22,6 +24,13 @@ export function createFakeGL(): { gl: Record<string, unknown>; state: FakeGL } {
     STATIC_DRAW: 6,
     FLOAT: 7,
     TRIANGLES: 8,
+    TEXTURE_2D: 9,
+    FRAMEBUFFER: 10,
+    FRAMEBUFFER_COMPLETE: 11,
+    RGBA: 12,
+    UNSIGNED_BYTE: 13,
+    TEXTURE0: 14,
+    COLOR_BUFFER_BIT: 15,
   };
   const setUniform =
     (name: string) =>
@@ -52,7 +61,10 @@ export function createFakeGL(): { gl: Record<string, unknown>; state: FakeGL } {
     vertexAttribPointer: () => {},
     useProgram: () => {},
     viewport: (...box: number[]) => state.uniforms.set("viewport", box),
-    getUniformLocation: (_program: unknown, name: string) => ({ name }),
+    // Like a real context: frame-memory uniforms exist only when declared.
+    getUniformLocation: (_program: unknown, name: string) =>
+      (name === "u_prev" || name === "u_pass") && !state.memory ? null : { name },
+    uniform1i: setUniform("uniform1i"),
     uniform1f: setUniform("uniform1f"),
     uniform2f: setUniform("uniform2f"),
     uniform2fv: setUniform("uniform2fv"),
@@ -60,6 +72,20 @@ export function createFakeGL(): { gl: Record<string, unknown>; state: FakeGL } {
     uniform4fv: setUniform("uniform4fv"),
     drawArrays: () => state.calls.push("drawArrays"),
     getExtension: () => null,
+    createTexture: () => ({}),
+    deleteTexture: () => {},
+    bindTexture: () => {},
+    texImage2D: () => {},
+    texParameteri: () => {},
+    activeTexture: () => {},
+    createFramebuffer: () => ({}),
+    deleteFramebuffer: () => {},
+    bindFramebuffer: (_target: number, buffer: unknown) =>
+      state.calls.push(buffer ? "bindFramebuffer" : "bindScreen"),
+    framebufferTexture2D: () => {},
+    checkFramebufferStatus: () => 11,
+    clearColor: () => {},
+    clear: () => {},
   };
   return { gl, state };
 }

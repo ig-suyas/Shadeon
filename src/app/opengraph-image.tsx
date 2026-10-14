@@ -8,7 +8,7 @@ export const contentType = "image/png";
 
 /** The site's card: the hero shader's colours behind the name and promise. */
 export default function Image() {
-  const hero = getShader("mesh-drift");
+  const hero = getShader("event-horizon");
   return new ImageResponse(
     <OgCard
       colors={hero?.colors.default ?? []}

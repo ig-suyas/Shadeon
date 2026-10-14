@@ -18,8 +18,8 @@ async function signOut(page: Page): Promise<void> {
 
 test.describe("signed out", () => {
   test("the design is open to everyone; the code is not", async ({ page }) => {
-    await page.goto("/shaders/mesh-drift");
-    await expect(page.getByRole("heading", { level: 1, name: "Mesh Drift" })).toBeVisible();
+    await page.goto("/shaders/pointer-glow");
+    await expect(page.getByRole("heading", { level: 1, name: "Pointer Glow" })).toBeVisible();
     await expect(page.locator("[data-testid=detail-preview] [data-shader]")).toBeVisible();
     await expect(page.getByRole("slider", { name: "Speed" })).toBeVisible();
 
@@ -30,29 +30,29 @@ test.describe("signed out", () => {
     await expect(page.getByTestId("header-account")).toHaveText("Sign in");
 
     await page.getByTestId("copy-sign-in").click();
-    await expect(page).toHaveURL(/\/login\?next=%2Fshaders%2Fmesh-drift/);
+    await expect(page).toHaveURL(/\/login\?next=%2Fshaders%2Fpointer-glow/);
   });
 
   test("the server refuses code without a session, whatever the page shows", async ({
     request,
   }) => {
-    const code = await request.post("/api/code", { data: { id: "mesh-drift" } });
+    const code = await request.post("/api/code", { data: { id: "pointer-glow" } });
     expect(code.status()).toBe(401);
     expect(await code.text()).not.toContain("void main");
 
     const forged = await request.post("/api/code", {
-      data: { id: "mesh-drift" },
+      data: { id: "pointer-glow" },
       headers: { Cookie: `shadeon_session=${"A".repeat(43)}` },
     });
     expect(forged.status()).toBe(401);
 
     const crossSite = await request.post("/api/code", {
-      data: { id: "mesh-drift" },
+      data: { id: "pointer-glow" },
       headers: { Origin: "https://evil.example" },
     });
     expect(crossSite.status()).toBe(403);
 
-    expect((await request.get("/r/mesh-drift.json")).status()).toBe(401);
+    expect((await request.get("/r/pointer-glow.json")).status()).toBe(401);
     const index = await request.get("/r/index.json");
     expect(index.status()).toBe(200);
     expect(await index.text()).not.toContain("void main");
@@ -73,24 +73,24 @@ test.describe("accounts", () => {
     await expect(page.getByTestId("header-account")).toHaveText("Account");
 
     // Signed in: the code and a personal install command appear.
-    await page.goto("/shaders/mesh-drift");
+    await page.goto("/shaders/pointer-glow");
     const panel = page.getByTestId("code-panel");
     await expect(panel.getByRole("tabpanel")).toContainText('"use client";');
     const install = (await panel.locator("code", { hasText: "npx shadcn" }).textContent()) ?? "";
     const link = /"(https?:\/\/[^"]+)"/.exec(install)?.[1];
-    expect(link).toMatch(/\/r\/mesh-drift\.json\?token=/);
+    expect(link).toMatch(/\/r\/pointer-glow\.json\?token=/);
     const registry = await page.request.get(new URL(link!).pathname + new URL(link!).search);
     expect(registry.status()).toBe(200);
-    expect(await registry.text()).toContain("components/shadeon/mesh-drift.tsx");
+    expect(await registry.text()).toContain("components/shadeon/pointer-glow.tsx");
 
     await signOut(page);
-    await page.goto("/shaders/mesh-drift");
+    await page.goto("/shaders/pointer-glow");
     await expect(page.getByTestId("code-panel").getByText("Sign in to get the code")).toBeVisible();
 
     // Back to where they were after signing in.
     await page.getByTestId("copy-sign-in").click();
     await signIn(page, email, TEST_PASSWORD);
-    await page.waitForURL("**/shaders/mesh-drift");
+    await page.waitForURL("**/shaders/pointer-glow");
 
     await page.goto("/account");
     await expect(page.getByTestId("account-email")).toHaveText(email);

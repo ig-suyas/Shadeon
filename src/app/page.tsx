@@ -14,17 +14,16 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  const hero = getShader("mesh-drift");
-  const closing = getShader("contour-field");
+  const closing = getShader("pointer-glow");
   const featured = [
-    getShader("ink-smoke"),
-    getShader("liquid-chrome"),
-    getShader("silk-waves"),
+    getShader("event-horizon"),
+    getShader("fog-veil"),
+    getShader("ink-bloom"),
   ].filter((shader) => shader !== undefined);
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      {hero ? <Hero shader={hero} /> : null}
+      <Hero />
       <Featured shaders={featured} />
       <HowItWorks shaders={[...shaders]} />
       <Quality />

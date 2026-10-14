@@ -48,7 +48,7 @@ test.describe("legal pages", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
     test("browsing sets no cookies", async ({ page, context }) => {
-      for (const path of ["/", "/shaders", "/shaders/mesh-drift", "/pricing", "/legal/cookies"]) {
+      for (const path of ["/", "/shaders", "/shaders/pointer-glow", "/pricing", "/legal/cookies"]) {
         await page.goto(path);
       }
       expect(await context.cookies()).toEqual([]);

@@ -59,7 +59,7 @@ test.describe("supporting pages", () => {
     await page.getByRole("button", { name: "Copy Terminal" }).click();
     const copied = await readCopied(page, browserName);
     expect(copied).toMatch(
-      /^npx shadcn@latest add "https?:\/\/.+\/r\/mesh-drift\.json\?token=<from the code panel>"$/,
+      /^npx shadcn@latest add "https?:\/\/.+\/r\/pointer-glow\.json\?token=<from the code panel>"$/,
     );
   });
 });

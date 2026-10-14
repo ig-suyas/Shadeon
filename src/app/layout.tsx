@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Instrument_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { InlineScript } from "@/components/layout/inline-script";
 import { SiteAnalytics } from "@/components/layout/site-analytics";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -9,7 +9,7 @@ import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 // next/font downloads these at build time and serves them from this origin.
-const display = Instrument_Sans({
+const display = Geist({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
@@ -39,7 +39,7 @@ export const maxDuration = 15;
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0a0b0d" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0c0f" },
     { media: "(prefers-color-scheme: light)", color: "#f3f4f6" },
   ],
 };
