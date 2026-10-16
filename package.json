@@ -13,12 +13,13 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "gen": "npm run gen:runtime",
+    "gen": "npm run gen:runtime && npm run gen:studio",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "check:launch": "tsx scripts/check-launch.ts",
-    "gen:catalog": "node scripts/write-provenance.mjs && node scripts/sync-catalog.mjs"
+    "gen:catalog": "node scripts/write-provenance.mjs && node scripts/sync-catalog.mjs",
+    "gen:studio": "node scripts/studio-source.mjs"
   },
   "dependencies": {
     "@neon/config": "^1.9.1",

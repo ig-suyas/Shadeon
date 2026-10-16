@@ -5,6 +5,7 @@ import { shaders } from "../../src/shaders/registry";
 
 // Every shader in the catalog gets the export-vs-preview pixel comparison.
 const SHADERS = shaders.map((shader) => shader.id);
+const STUDIO = new Set(shaders.filter((s) => s.engine === "studio").map((s) => s.id));
 
 function preview(page: Page): Locator {
   return page.locator("[data-testid=detail-preview] [data-shader]");
@@ -203,7 +204,10 @@ test.describe("exported code matches the preview", () => {
       await page.getByTestId("code-panel").getByRole("tab", { name: "JavaScript" }).click();
       await page.getByTestId("code-panel").getByRole("button", { name: "Copy code" }).click();
       const code = await readCopied(page, browserName);
-      expect(code).toContain("mountShader(canvas, fragment");
+      const studio = STUDIO.has(id);
+      expect(code).toContain(
+        studio ? "mountStudio(canvas, material" : "mountShader(canvas, fragment",
+      );
 
       const standalone = await context.newPage();
       await standalone.setViewportSize({ width: 1280, height: 900 });
@@ -213,9 +217,16 @@ test.describe("exported code matches the preview", () => {
       await standalone.setContent(
         `<!doctype html><html><body style="margin:0;background:#000">
           ${shim}
-          <div style="width:${width}px;height:${height}px">
-            <canvas id="${id}" style="display:block;width:100%;height:100%"></canvas>
-          </div>
+          ${
+            studio
+              ? // Studio exports mount on a host element that holds the canvas.
+                `<div id="${id}" style="position:relative;width:${width}px;height:${height}px">
+                  <canvas style="position:absolute;inset:0;display:block;width:100%;height:100%"></canvas>
+                </div>`
+              : `<div style="width:${width}px;height:${height}px">
+                  <canvas id="${id}" style="display:block;width:100%;height:100%"></canvas>
+                </div>`
+          }
           <script type="module">${code}</script>
         </body></html>`,
       );

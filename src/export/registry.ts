@@ -8,8 +8,11 @@ import { generateExport } from "./generate";
  * install link.
  */
 
-export function registryItem(meta: ShaderMeta, fragment: string) {
-  const { code, filename } = generateExport({ meta, fragment }, "react");
+export function registryItem(
+  meta: ShaderMeta,
+  source: { fragment: string; passes?: Record<string, string> },
+) {
+  const { code, filename } = generateExport({ meta, ...source }, "react");
   return {
     $schema: "https://ui.shadcn.com/schema/registry-item.json",
     name: meta.id,

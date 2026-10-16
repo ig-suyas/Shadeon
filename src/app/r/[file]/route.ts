@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { canAccess } from "@/access/can-access";
 import { registryIndex, registryItem } from "@/export/registry";
-import { loadFragment } from "@/shaders/loaders";
+import { exportSource } from "@/export/source";
 import { getShader, shaders } from "@/shaders/registry";
 import { findUserById } from "@/server/accounts";
 import { getDatabase } from "@/server/db/client";
@@ -55,7 +55,7 @@ export async function GET(
     if (!canAccess(shader, "free")) {
       return Response.json({ error: "plan required" }, { status: 403, headers: PRIVATE });
     }
-    return Response.json(registryItem(shader, await loadFragment(shader.id)), { headers: PRIVATE });
+    return Response.json(registryItem(shader, await exportSource(shader)), { headers: PRIVATE });
   } catch (error) {
     logFailure("registry", error);
     return Response.json({ error: "failed" }, { status: 500, headers: PRIVATE });

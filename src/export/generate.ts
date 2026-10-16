@@ -5,6 +5,7 @@ import { resolveSettings, type Settings, type SettingValue } from "@/shaders/set
 import { componentName } from "./naming";
 import { EXPORT_TARGETS, TARGET_LABELS, type ExportTarget } from "./targets";
 import { RUNTIME_JS, RUNTIME_TS } from "./runtime-source.generated";
+import { STUDIO_CORE_JS, STUDIO_CORE_TS, STUDIO_MATERIALS } from "./studio-source.generated";
 
 export { componentName };
 
@@ -18,7 +19,10 @@ export { EXPORT_TARGETS, type ExportTarget };
 
 export interface ExportInput {
   meta: ShaderMeta;
+  /** The GLSL fragment (single-fragment shaders; empty for studio shaders). */
   fragment: string;
+  /** A studio material's GLSL passes by file name (for the GLSL export). */
+  passes?: Record<string, string>;
   /** Untrusted is fine: values are validated against the shader's controls. */
   settings?: Record<string, unknown>;
 }
@@ -211,9 +215,318 @@ function generateReact(meta: ShaderMeta, fragment: string, settings: Settings): 
   ].join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// Studio shaders (multi-pass WebGL2 on src/studio/core.ts)
+// ---------------------------------------------------------------------------
+
+const STUDIO_NOTE =
+  "// Shadeon studio core (MIT). It is identical for every Shadeon studio shader,\n" +
+  "// so if you use several you can move it into one shared module.";
+
+function studioSources(meta: ShaderMeta): { doc: string; ts: string; js: string } {
+  const material = STUDIO_MATERIALS[meta.id];
+  if (!material) throw new Error(`No studio material for "${meta.id}"`);
+  return material;
+}
+
+/** Ranges the core clamps every prop against. */
+function studioRangesLiteral(meta: ShaderMeta): string {
+  const lines = meta.controls.map((control) =>
+    control.type === "float"
+      ? `  ${control.key}: { min: ${control.min}, max: ${control.max}, default: ${control.default} },`
+      : `  ${control.key}: { default: ${String(control.default)} },`,
+  );
+  return ["{", ...lines, "}"].join("\n");
+}
+
+/**
+ * The two palettes baked into the export. Untouched colours keep the shader's
+ * dark and light palettes; picked colours apply in both themes.
+ */
+function studioPalettes(meta: ShaderMeta, settings: Settings): { dark: string[]; light: string[] } {
+  const untouched = settings.colors.every((hex, index) => hex === meta.colors.default[index]);
+  return {
+    dark: settings.colors,
+    light: untouched && meta.colors.light ? [...meta.colors.light] : settings.colors,
+  };
+}
+
+function studioParams(meta: ShaderMeta, settings: Settings): string {
+  return meta.controls
+    .map((control) => `  ${control.key}: ${literal(settings[control.key] ?? control.default)},`)
+    .join("\n");
+}
+
+function generateStudioReact(meta: ShaderMeta, settings: Settings): string {
+  const name = componentName(meta.id);
+  const keys = meta.controls.map((control) => control.key);
+  const colorTuple = `[${settings.colors.map(() => "string").join(", ")}]`;
+  const { dark, light } = studioPalettes(meta, settings);
+  const source = studioSources(meta);
+
+  const propLines: string[] = [
+    `  /** ${meta.colors.labels.join(", ")}. Hex colours; when set they replace both theme palettes. */`,
+    `  colors?: ${colorTuple};`,
+    '  /** "auto" follows data-theme or a "dark" class on <html>, then the system setting. */',
+    '  theme?: "auto" | "light" | "dark";',
+  ];
+  for (const control of meta.controls) {
+    const range = control.type === "float" ? ` ${control.min} to ${control.max}; clamped.` : "";
+    const detail = control.description ? ` ${control.description}` : "";
+    propLines.push(`  /** ${control.label}.${detail}${range} */`);
+    propLines.push(`  ${control.key}?: ${control.type === "float" ? "number" : "boolean"};`);
+  }
+  propLines.push(
+    "  /** Follow the pointer and taps (default true). */",
+    "  interactive?: boolean;",
+    "  /** Freeze the animation on the current frame. */",
+    "  paused?: boolean;",
+    "  /** Upper bound for devicePixelRatio (default 1.5). Lower it to save GPU time. */",
+    "  maxDpr?: number;",
+    "  className?: string;",
+    "  style?: CSSProperties;",
+  );
+
+  const defaults = meta.controls.map(
+    (control) => `  ${control.key} = ${literal(settings[control.key] ?? control.default)},`,
+  );
+
+  return [
+    '"use client";',
+    "",
+    banner(meta, [
+      `Usage: <${name} className="h-[480px] w-full" />`,
+      "It fills its element, so give it a size. Requires WebGL2; without it the",
+      "element shows a still gradient of the palette.",
+    ]),
+    "",
+    'import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from "react";',
+    "",
+    `const DARK_COLORS: ${colorTuple} = ${literal(dark)};`,
+    `const LIGHT_COLORS: ${colorTuple} = ${literal(light)};`,
+    "",
+    `/** Allowed range of every prop: values outside are clamped. */`,
+    `const RANGES: Record<string, StudioRange> = ${studioRangesLiteral(meta)};`,
+    "",
+    `export interface ${name}Props {`,
+    ...propLines,
+    "}",
+    "",
+    "function subscribeTheme(onChange: () => void): () => void {",
+    '  const media = matchMedia("(prefers-color-scheme: light)");',
+    '  media.addEventListener("change", onChange);',
+    "  const observer = new MutationObserver(onChange);",
+    "  observer.observe(document.documentElement, {",
+    "    attributes: true,",
+    '    attributeFilter: ["data-theme", "class"],',
+    "  });",
+    "  return () => {",
+    '    media.removeEventListener("change", onChange);',
+    "    observer.disconnect();",
+    "  };",
+    "}",
+    "",
+    "function readLightTheme(): boolean {",
+    "  const root = document.documentElement;",
+    '  if (root.dataset.theme === "light" || root.dataset.theme === "dark") {',
+    '    return root.dataset.theme === "light";',
+    "  }",
+    '  if (root.classList.contains("dark")) return false;',
+    '  return matchMedia("(prefers-color-scheme: light)").matches;',
+    "}",
+    "",
+    "/** A still gradient of the palette, shown before the first frame and without WebGL2. */",
+    "function poster(colors: readonly string[]): string {",
+    '  const [a = "#000000", b = a, c = b] = colors;',
+    "  return `radial-gradient(70% 60% at 55% 50%, ${c} 0%, transparent 70%), radial-gradient(90% 80% at 50% 55%, ${b} 0%, ${a} 75%)`;",
+    "}",
+    "",
+    `export function ${name}({`,
+    "  colors,",
+    '  theme = "auto",',
+    ...defaults,
+    "  interactive = true,",
+    "  paused = false,",
+    "  maxDpr = 1.5,",
+    "  className,",
+    "  style,",
+    `}: ${name}Props) {`,
+    "  const hostRef = useRef<HTMLDivElement>(null);",
+    "  const canvasRef = useRef<HTMLCanvasElement>(null);",
+    "  const handleRef = useRef<StudioHandle | null>(null);",
+    "  const systemLight = useSyncExternalStore(subscribeTheme, readLightTheme, () => false);",
+    '  const light = theme === "auto" ? systemLight : theme === "light";',
+    "  const palette = colors ?? (light ? LIGHT_COLORS : DARK_COLORS);",
+    '  const paletteKey = palette.join(",");',
+    `  const latest = useRef({ params: { ${keys.join(", ")} } as StudioParams, palette, light, paused });`,
+    "",
+    "  // Declared before the mount effect, so a fresh mount always sees current values.",
+    "  useEffect(() => {",
+    `    latest.current = { params: { ${keys.join(", ")} }, palette, light, paused };`,
+    "  });",
+    "",
+    "  useEffect(() => {",
+    "    const canvas = canvasRef.current;",
+    "    const host = hostRef.current;",
+    "    if (!canvas || !host) return;",
+    "    const now = latest.current;",
+    "    const handle = mountStudio(canvas, material, {",
+    "      params: now.params,",
+    "      ranges: RANGES,",
+    "      colors: now.palette,",
+    "      light: now.light,",
+    "      maxDpr,",
+    "      interactive,",
+    "      eventTarget: host,",
+    "    });",
+    "    if (now.paused) handle.pause();",
+    "    handleRef.current = handle;",
+    "    return () => {",
+    "      handle.destroy();",
+    "      handleRef.current = null;",
+    "    };",
+    "  }, [maxDpr, interactive]);",
+    "",
+    "  useEffect(() => {",
+    `    handleRef.current?.set({ ${keys.join(", ")} });`,
+    `  }, [${keys.join(", ")}]);`,
+    "",
+    "  useEffect(() => {",
+    '    handleRef.current?.setColors(paletteKey.split(","), light);',
+    "  }, [paletteKey, light]);",
+    "",
+    "  useEffect(() => {",
+    "    if (paused) handleRef.current?.pause();",
+    "    else handleRef.current?.play();",
+    "  }, [paused]);",
+    "",
+    "  return (",
+    "    <div",
+    "      ref={hostRef}",
+    "      className={className}",
+    '      style={{ position: "relative", overflow: "hidden", background: poster(palette), ...style }}',
+    "    >",
+    "      <canvas",
+    "        // A canvas keeps one context for life: a new one for each mount setting.",
+    "        key={`${maxDpr}:${interactive}`}",
+    "        ref={canvasRef}",
+    '        aria-hidden="true"',
+    '        style={{ position: "absolute", inset: 0, display: "block", width: "100%", height: "100%" }}',
+    "      />",
+    "    </div>",
+    "  );",
+    "}",
+    "",
+    // The core comes before the material: the material's GLSL reads STUDIO_GLSL at load.
+    STUDIO_NOTE,
+    STUDIO_CORE_TS,
+    "",
+    `// ${meta.name} material`,
+    source.doc,
+    source.ts,
+    "",
+  ].join("\n");
+}
+
+function generateStudioVanilla(meta: ShaderMeta, settings: Settings): string {
+  const { dark, light } = studioPalettes(meta, settings);
+  const source = studioSources(meta);
+  return [
+    banner(meta, [
+      "Usage: add this element, then load this file as a module script",
+      `(type="module" src="./${meta.id}.js"). It fills the element, so give it a size.`,
+      `  <div id="${meta.id}" style="position:relative;height:480px">`,
+      '    <canvas style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>',
+      "  </div>",
+      "Requires WebGL2; without it the element keeps its own background.",
+    ]),
+    "",
+    STUDIO_NOTE,
+    STUDIO_CORE_JS,
+    "",
+    `// ${meta.name} material`,
+    source.doc,
+    source.js,
+    "",
+    `const DARK_COLORS = ${literal(dark)};`,
+    `const LIGHT_COLORS = ${literal(light)};`,
+    `const RANGES = ${studioRangesLiteral(meta)};`,
+    "const settings = {",
+    studioParams(meta, settings),
+    "};",
+    "",
+    `const host = document.getElementById("${meta.id}");`,
+    'const canvas = host.querySelector("canvas");',
+    'const media = matchMedia("(prefers-color-scheme: light)");',
+    "const isLight = () => {",
+    "  const theme = document.documentElement.dataset.theme;",
+    '  return theme === "light" || (theme !== "dark" && media.matches);',
+    "};",
+    "const studio = mountStudio(canvas, material, {",
+    "  params: settings,",
+    "  ranges: RANGES,",
+    "  colors: isLight() ? LIGHT_COLORS : DARK_COLORS,",
+    "  light: isLight(),",
+    "  eventTarget: host,",
+    "});",
+    'media.addEventListener("change", () =>',
+    "  studio.setColors(isLight() ? LIGHT_COLORS : DARK_COLORS, isLight()),",
+    ");",
+    "",
+    "// Update it later with studio.set({ speed: 2 }), or call studio.pause(),",
+    "// studio.play() and studio.destroy().",
+    "export { studio };",
+    "",
+  ].join("\n");
+}
+
+function generateStudioGlsl(meta: ShaderMeta, passes: Record<string, string>): string {
+  const sections = Object.entries(passes).map(([file, code]) =>
+    [`// ===== ${file} =====`, code.trim(), ""].join("\n"),
+  );
+  return [
+    `// ${meta.name} - Shadeon`,
+    `// ${shaderUrl(meta)} · v${meta.version} · MIT License`,
+    "//",
+    "// GLSL ES 3.00 passes (WebGL2), for reference. They are orchestrated by the",
+    "// studio core (wake field, simulation, render passes); copy the React or",
+    "// JavaScript file to run them.",
+    "",
+    ...sections,
+  ].join("\n");
+}
+
 export function generateExport(input: ExportInput, target: ExportTarget): ExportResult {
   const { meta, fragment } = input;
   const settings = resolveSettings(meta, input.settings);
+  if (meta.engine === "studio") {
+    switch (target) {
+      case "react":
+        return {
+          target,
+          label: TARGET_LABELS.react,
+          language: "tsx",
+          filename: `${meta.id}.tsx`,
+          code: generateStudioReact(meta, settings),
+        };
+      case "vanilla":
+        return {
+          target,
+          label: TARGET_LABELS.vanilla,
+          language: "javascript",
+          filename: `${meta.id}.js`,
+          code: generateStudioVanilla(meta, settings),
+        };
+      case "glsl":
+        return {
+          target,
+          label: TARGET_LABELS.glsl,
+          language: "glsl",
+          filename: `${meta.id}.glsl`,
+          code: generateStudioGlsl(meta, input.passes ?? {}),
+        };
+    }
+  }
   switch (target) {
     case "react":
       return {

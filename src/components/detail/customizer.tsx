@@ -4,8 +4,10 @@ import { ArrowCounterClockwiseIcon, ShuffleIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { button } from "@/components/ui/button";
 import { isHex } from "@/lib/color";
+import { useTheme } from "@/lib/use-theme";
 import type { ShaderControl, ShaderMeta } from "@/shaders/schema";
 import type { Settings } from "@/shaders/settings";
+import { effectiveColors } from "@/studio/palette";
 
 interface CustomizerProps {
   shader: ShaderMeta;
@@ -152,6 +154,9 @@ export function Customizer({
   onRandomize,
   onReset,
 }: CustomizerProps) {
+  // Studio shaders have a palette per theme: show the one on screen.
+  const theme = useTheme();
+  const shownColors = effectiveColors(shader, settings.colors, theme);
   return (
     <div className="border-line bg-bg-raised rounded-card flex flex-col border">
       <div className="border-line flex items-center justify-between gap-2 border-b py-2 pr-2 pl-4">
@@ -194,14 +199,14 @@ export function Customizer({
         <fieldset>
           <legend className="mb-2.5 text-sm font-medium">Colours</legend>
           <div className="grid grid-cols-2 gap-x-3 gap-y-4">
-            {settings.colors.map((color, index) => (
+            {shownColors.map((color, index) => (
               <ColorField
                 key={index}
                 label={shader.colors.labels[index] ?? `Colour ${index + 1}`}
                 value={color}
                 onChange={(hex) =>
                   onChange({
-                    colors: settings.colors.map((item, i) => (i === index ? hex : item)),
+                    colors: shownColors.map((item, i) => (i === index ? hex : item)),
                   })
                 }
               />

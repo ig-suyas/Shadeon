@@ -2,8 +2,10 @@
 import type { ShaderMeta } from "./schema";
 import { meta as contourField } from "./contour-field/meta";
 import { meta as eventHorizon } from "./event-horizon/meta";
+import { meta as flintGlass } from "./flint-glass/meta";
 import { meta as fogVeil } from "./fog-veil/meta";
 import { meta as inkBloom } from "./ink-bloom/meta";
+import { meta as lodestone } from "./lodestone/meta";
 import { meta as pointerGlow } from "./pointer-glow/meta";
 
 /**
@@ -11,6 +13,8 @@ import { meta as pointerGlow } from "./pointer-glow/meta";
  * so listing pages never pay for fragment source they do not show.
  */
 export const shaders: readonly ShaderMeta[] = [
+  lodestone,
+  flintGlass,
   fogVeil,
   eventHorizon,
   inkBloom,

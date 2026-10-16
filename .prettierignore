@@ -3,6 +3,7 @@ node_modules
 package-lock.json
 next-env.d.ts
 src/export/runtime-source.generated.ts
+src/export/studio-source.generated.ts
 public/r
 src/shaders/registry.ts
 src/shaders/loaders.ts

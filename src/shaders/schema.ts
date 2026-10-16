@@ -74,7 +74,14 @@ export const shaderMetaSchema = z
     colors: z.object({
       default: z.array(hexColorSchema).min(1).max(6),
       labels: z.array(z.string().min(1)),
+      /** Defaults for light themes (studio shaders); `default` is the dark palette. */
+      light: z.array(hexColorSchema).min(1).max(6).optional(),
     }),
+    /**
+     * "fragment" (the default): one GLSL ES 1.00 fragment for the runtime.
+     * "studio": a multi-pass WebGL2 material on src/studio/core.ts.
+     */
+    engine: z.enum(["fragment", "studio"]).optional(),
     controls: z.array(controlSchema),
     presets: z.array(presetSchema).min(3),
     reactive: z.object({ pointer: z.boolean(), scroll: z.boolean() }),
@@ -95,6 +102,9 @@ export const shaderMetaSchema = z
     const issue = (message: string) => ctx.addIssue({ code: "custom", message });
     if (meta.colors.labels.length !== meta.colors.default.length) {
       issue("colors.labels must have one label per colour");
+    }
+    if (meta.colors.light && meta.colors.light.length !== meta.colors.default.length) {
+      issue("colors.light must have one colour per label");
     }
     const keys = meta.controls.map((control) => control.key);
     if (new Set(keys).size !== keys.length) issue("control keys must be unique");

@@ -1,8 +1,8 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { canAccess } from "@/access/can-access";
-import { loaderIds, loadFragment } from "../loaders";
+import { loaderIds, loadFragment, loadMaterial, materialIds } from "../loaders";
 import { shaders } from "../registry";
 import { shaderMetaSchema, type ShaderMeta } from "../schema";
 import {
@@ -31,7 +31,7 @@ describe("catalog", () => {
   it("has unique ids and a loader for every shader", () => {
     const ids = shaders.map((shader) => shader.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect([...loaderIds()].sort()).toEqual([...ids].sort());
+    expect([...loaderIds(), ...materialIds()].sort()).toEqual([...ids].sort());
   });
 
   describe.each(shaders.map((shader) => [shader.id, shader] as const))("%s", (_id, shader) => {
@@ -44,7 +44,34 @@ describe("catalog", () => {
       expect(existsSync(resolve("src/shaders", shader.id, "PROVENANCE.md"))).toBe(true);
     });
 
-    it("declares exactly the uniforms its metadata describes", async () => {
+    const studio = shader.engine === "studio";
+
+    it("has the source its engine needs", () => {
+      const folder = resolve("src/shaders", shader.id);
+      expect(existsSync(resolve(folder, studio ? "material.ts" : "fragment.ts"))).toBe(true);
+      expect(existsSync(resolve(folder, studio ? "fragment.ts" : "material.ts"))).toBe(false);
+    });
+
+    it.runIf(studio)("is a complete studio material", async () => {
+      const material = await loadMaterial(shader.id);
+      expect(material.settleFrames).toBeGreaterThan(0);
+      expect(typeof material.create).toBe("function");
+      const passes = Object.values(material.glsl ?? {});
+      expect(passes.length).toBeGreaterThan(0);
+      for (const pass of passes) {
+        expect(pass.startsWith("#version 300 es")).toBe(true);
+        expect(pass).toContain("void main()");
+        expect(pass).not.toContain("undefined");
+      }
+    });
+
+    it.runIf(studio)("reads every control and ships a light palette", () => {
+      const source = readFileSync(resolve("src/shaders", shader.id, "material.ts"), "utf8");
+      for (const control of shader.controls) expect(source).toContain(`"${control.key}"`);
+      expect(shader.colors.light?.length).toBe(shader.colors.default.length);
+    });
+
+    it.skipIf(studio)("declares exactly the uniforms its metadata describes", async () => {
       const fragment = await loadFragment(shader.id);
       const declared = [...fragment.matchAll(/^uniform\s+\w+\s+u_(\w+);/gm)].map((m) => m[1]);
       const expected = [
@@ -57,7 +84,7 @@ describe("catalog", () => {
       expect(declared.includes("scroll")).toBe(shader.reactive.scroll);
     });
 
-    it("is a complete GLSL ES 1.00 fragment shader", async () => {
+    it.skipIf(studio)("is a complete GLSL ES 1.00 fragment shader", async () => {
       const fragment = await loadFragment(shader.id);
       expect(fragment).toContain("precision");
       expect(fragment).toContain("void main()");

@@ -5,6 +5,7 @@ import { loadFragment } from "@/shaders/loaders";
 import { posterBackground } from "@/shaders/poster";
 import type { ShaderMeta } from "@/shaders/schema";
 import { resolveSettings } from "@/shaders/settings";
+import { StudioSurface } from "@/studio/StudioSurface";
 import { acquireDedicated, loseContext } from "./context-budget";
 import { getDeviceProfile } from "./device";
 import { mountShader } from "./runtime";
@@ -44,6 +45,9 @@ interface Handle {
  */
 export function ShaderCanvas({ mode = "shared", ...props }: ShaderCanvasProps) {
   // A new key gives a fresh canvas element: a canvas is tied to one context type.
+  if (props.shader.engine === "studio") {
+    return <StudioSurface key={`${props.shader.id}:${mode}`} mode={mode} {...props} />;
+  }
   return <ShaderSurface key={`${props.shader.id}:${mode}`} mode={mode} {...props} />;
 }
 

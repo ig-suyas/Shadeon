@@ -2,13 +2,19 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { loadFragment } from "@/shaders/loaders";
+import { loadFragment, loadMaterial } from "@/shaders/loaders";
 import { shaders } from "@/shaders/registry";
 import { applyPreset, defaultSettings, type Settings } from "@/shaders/settings";
 import { buildRuntimeSource, OUTPUT } from "../../../scripts/runtime-source.mjs";
+import { buildStudioSource, OUTPUT as STUDIO_OUTPUT } from "../../../scripts/studio-source.mjs";
 import { componentName, EXPORT_TARGETS, generateAllExports, generateExport } from "../generate";
 import { installCommandFor, registryIndex } from "../registry";
 import { RUNTIME_JS, RUNTIME_TS } from "../runtime-source.generated";
+import { exportSource } from "../source";
+import { STUDIO_CORE_JS, STUDIO_CORE_TS, STUDIO_MATERIALS } from "../studio-source.generated";
+
+const fragmentShaders = shaders.filter((shader) => shader.engine !== "studio");
+const studioShaders = shaders.filter((shader) => shader.engine === "studio");
 
 /** Evaluates a template literal from generated code back into its string value. */
 function readTemplateLiteral(code: string, name: string): string {
@@ -36,6 +42,21 @@ describe("runtime source", () => {
   });
 });
 
+describe("studio source", () => {
+  it("is up to date with src/studio/core.ts and the materials", () => {
+    const committed = readFileSync(STUDIO_OUTPUT, "utf8").replace(/\r\n/g, "\n");
+    expect(committed).toBe(buildStudioSource());
+  });
+
+  it("is self-contained: no imports or exports", () => {
+    const sources = [STUDIO_CORE_TS, STUDIO_CORE_JS];
+    for (const material of Object.values(STUDIO_MATERIALS)) sources.push(material.ts, material.js);
+    for (const source of sources) expect(source).not.toMatch(/^\s*(import|export)\s/m);
+    expect(STUDIO_CORE_TS).toContain("function mountStudio(");
+    expect(Object.keys(STUDIO_MATERIALS).sort()).toEqual(studioShaders.map((s) => s.id).sort());
+  });
+});
+
 describe("naming", () => {
   it("derives a component name from the id", () => {
     expect(componentName("mesh-drift")).toBe("MeshDrift");
@@ -54,98 +75,195 @@ describe("naming", () => {
   });
 });
 
-describe.each(shaders.map((shader) => [shader.id, shader] as const))("export %s", (_id, meta) => {
-  it("returns one result per target with the right file type", async () => {
-    const fragment = await loadFragment(meta.id);
-    const results = generateAllExports({ meta, fragment });
-    expect(results.map((result) => result.target)).toEqual([...EXPORT_TARGETS]);
-    expect(results.map((result) => result.filename)).toEqual([
-      `${meta.id}.tsx`,
-      `${meta.id}.js`,
-      `${meta.id}.frag`,
-    ]);
-  });
+describe.each(fragmentShaders.map((shader) => [shader.id, shader] as const))(
+  "export %s",
+  (_id, meta) => {
+    it("returns one result per target with the right file type", async () => {
+      const fragment = await loadFragment(meta.id);
+      const results = generateAllExports({ meta, fragment });
+      expect(results.map((result) => result.target)).toEqual([...EXPORT_TARGETS]);
+      expect(results.map((result) => result.filename)).toEqual([
+        `${meta.id}.tsx`,
+        `${meta.id}.js`,
+        `${meta.id}.frag`,
+      ]);
+    });
 
-  it("is deterministic", async () => {
-    const fragment = await loadFragment(meta.id);
-    for (const target of EXPORT_TARGETS) {
-      const a = generateExport({ meta, fragment }, target).code;
-      const b = generateExport({ meta, fragment }, target).code;
-      expect(a).toBe(b);
-    }
-  });
+    it("is deterministic", async () => {
+      const fragment = await loadFragment(meta.id);
+      for (const target of EXPORT_TARGETS) {
+        const a = generateExport({ meta, fragment }, target).code;
+        const b = generateExport({ meta, fragment }, target).code;
+        expect(a).toBe(b);
+      }
+    });
 
-  it("embeds the exact fragment source the preview runs", async () => {
-    const fragment = await loadFragment(meta.id);
-    const react = generateExport({ meta, fragment }, "react").code;
-    const vanilla = generateExport({ meta, fragment }, "vanilla").code;
-    const glsl = generateExport({ meta, fragment }, "glsl").code;
-    expect(readTemplateLiteral(react, "fragment")).toBe(fragment);
-    expect(readTemplateLiteral(vanilla, "fragment")).toBe(fragment);
-    expect(glsl).toContain(fragment.trimEnd());
-  });
+    it("embeds the exact fragment source the preview runs", async () => {
+      const fragment = await loadFragment(meta.id);
+      const react = generateExport({ meta, fragment }, "react").code;
+      const vanilla = generateExport({ meta, fragment }, "vanilla").code;
+      const glsl = generateExport({ meta, fragment }, "glsl").code;
+      expect(readTemplateLiteral(react, "fragment")).toBe(fragment);
+      expect(readTemplateLiteral(vanilla, "fragment")).toBe(fragment);
+      expect(glsl).toContain(fragment.trimEnd());
+    });
 
-  it("embeds the exact runtime the preview runs", async () => {
-    const fragment = await loadFragment(meta.id);
-    expect(generateExport({ meta, fragment }, "react").code).toContain(RUNTIME_TS);
-    expect(generateExport({ meta, fragment }, "vanilla").code).toContain(RUNTIME_JS);
-  });
+    it("embeds the exact runtime the preview runs", async () => {
+      const fragment = await loadFragment(meta.id);
+      expect(generateExport({ meta, fragment }, "react").code).toContain(RUNTIME_TS);
+      expect(generateExport({ meta, fragment }, "vanilla").code).toContain(RUNTIME_JS);
+    });
 
-  it("carries the name, link and MIT notice in every output", async () => {
-    const fragment = await loadFragment(meta.id);
-    for (const result of generateAllExports({ meta, fragment })) {
-      expect(result.code).toContain(meta.name);
-      expect(result.code).toContain(`/shaders/${meta.id}`);
-      expect(result.code).toContain("MIT License");
-    }
-  });
+    it("carries the name, link and MIT notice in every output", async () => {
+      const fragment = await loadFragment(meta.id);
+      for (const result of generateAllExports({ meta, fragment })) {
+        expect(result.code).toContain(meta.name);
+        expect(result.code).toContain(`/shaders/${meta.id}`);
+        expect(result.code).toContain("MIT License");
+      }
+    });
 
-  it("bakes the current settings into each output", async () => {
-    const fragment = await loadFragment(meta.id);
-    const preset = meta.presets[meta.presets.length - 1];
-    if (!preset) throw new Error("shader has no presets");
-    const settings: Settings = { ...applyPreset(meta, preset.id), speed: 2.35 };
-    const react = generateExport({ meta, fragment, settings }, "react").code;
-    const vanilla = generateExport({ meta, fragment, settings }, "vanilla").code;
-    const glsl = generateExport({ meta, fragment, settings }, "glsl").code;
-    const colors = `[${settings.colors.map((hex) => `"${hex}"`).join(", ")}]`;
-    expect(react).toContain(`= ${colors};`);
-    expect(react).toContain("  speed = 2.35,");
-    expect(vanilla).toContain(`  colors: ${colors},`);
-    expect(vanilla).toContain("  speed: 2.35,");
-    expect(glsl).toContain("speed = 2.35");
-    expect(glsl).toContain(settings.colors[0]);
-    for (const control of meta.controls) {
-      expect(react).toContain(`  ${control.key} = ${String(settings[control.key])},`);
-    }
-  });
+    it("bakes the current settings into each output", async () => {
+      const fragment = await loadFragment(meta.id);
+      const preset = meta.presets[meta.presets.length - 1];
+      if (!preset) throw new Error("shader has no presets");
+      const settings: Settings = { ...applyPreset(meta, preset.id), speed: 2.35 };
+      const react = generateExport({ meta, fragment, settings }, "react").code;
+      const vanilla = generateExport({ meta, fragment, settings }, "vanilla").code;
+      const glsl = generateExport({ meta, fragment, settings }, "glsl").code;
+      const colors = `[${settings.colors.map((hex) => `"${hex}"`).join(", ")}]`;
+      expect(react).toContain(`= ${colors};`);
+      expect(react).toContain("  speed = 2.35,");
+      expect(vanilla).toContain(`  colors: ${colors},`);
+      expect(vanilla).toContain("  speed: 2.35,");
+      expect(glsl).toContain("speed = 2.35");
+      expect(glsl).toContain(settings.colors[0]);
+      for (const control of meta.controls) {
+        expect(react).toContain(`  ${control.key} = ${String(settings[control.key])},`);
+      }
+    });
 
-  it("never lets untrusted settings into the generated code", async () => {
-    const fragment = await loadFragment(meta.id);
-    const hostile = {
-      colors: ['"];alert(1);//', "#00ff00"],
-      speed: "1; fetch('https://evil.example')",
-      __proto__: { polluted: true },
-      "x</script><script>alert(1)</script>": 1,
-    };
-    for (const target of EXPORT_TARGETS) {
-      const code = generateExport({ meta, fragment, settings: hostile }, target).code;
-      expect(code).not.toContain("alert(1)");
-      expect(code).not.toContain("evil.example");
-      expect(code).not.toContain("</script>");
-      expect(code).not.toContain("polluted");
-    }
-    const react = generateExport({ meta, fragment, settings: hostile }, "react").code;
-    expect(react).toContain(`  speed = ${String(defaultSettings(meta).speed)},`);
-  });
+    it("never lets untrusted settings into the generated code", async () => {
+      const fragment = await loadFragment(meta.id);
+      const hostile = {
+        colors: ['"];alert(1);//', "#00ff00"],
+        speed: "1; fetch('https://evil.example')",
+        __proto__: { polluted: true },
+        "x</script><script>alert(1)</script>": 1,
+      };
+      for (const target of EXPORT_TARGETS) {
+        const code = generateExport({ meta, fragment, settings: hostile }, target).code;
+        expect(code).not.toContain("alert(1)");
+        expect(code).not.toContain("evil.example");
+        expect(code).not.toContain("</script>");
+        expect(code).not.toContain("polluted");
+      }
+      const react = generateExport({ meta, fragment, settings: hostile }, "react").code;
+      expect(react).toContain(`  speed = ${String(defaultSettings(meta).speed)},`);
+    });
 
-  it("produces vanilla JavaScript that parses", async () => {
-    const fragment = await loadFragment(meta.id);
-    const { code } = generateExport({ meta, fragment }, "vanilla");
-    // `new Function` cannot parse module syntax, so drop the one export line.
-    expect(() => new Function(code.replace(/^export \{ shader \};$/m, ""))).not.toThrow();
-  });
-});
+    it("produces vanilla JavaScript that parses", async () => {
+      const fragment = await loadFragment(meta.id);
+      const { code } = generateExport({ meta, fragment }, "vanilla");
+      // `new Function` cannot parse module syntax, so drop the one export line.
+      expect(() => new Function(code.replace(/^export \{ shader \};$/m, ""))).not.toThrow();
+    });
+  },
+);
+
+describe.each(studioShaders.map((shader) => [shader.id, shader] as const))(
+  "studio export %s",
+  (_id, meta) => {
+    it("returns one result per target with the right file type", async () => {
+      const results = generateAllExports({ meta, ...(await exportSource(meta)) });
+      expect(results.map((result) => result.target)).toEqual([...EXPORT_TARGETS]);
+      expect(results.map((result) => result.filename)).toEqual([
+        `${meta.id}.tsx`,
+        `${meta.id}.js`,
+        `${meta.id}.glsl`,
+      ]);
+    });
+
+    it("is deterministic", async () => {
+      const source = await exportSource(meta);
+      for (const target of EXPORT_TARGETS) {
+        expect(generateExport({ meta, ...source }, target).code).toBe(
+          generateExport({ meta, ...source }, target).code,
+        );
+      }
+    });
+
+    it("embeds the exact core and material the preview runs", async () => {
+      const source = await exportSource(meta);
+      const material = STUDIO_MATERIALS[meta.id];
+      if (!material) throw new Error("no material source");
+      const react = generateExport({ meta, ...source }, "react").code;
+      const vanilla = generateExport({ meta, ...source }, "vanilla").code;
+      const glsl = generateExport({ meta, ...source }, "glsl").code;
+      expect(react).toContain(STUDIO_CORE_TS);
+      expect(react).toContain(material.ts);
+      expect(vanilla).toContain(STUDIO_CORE_JS);
+      expect(vanilla).toContain(material.js);
+      const passes = (await loadMaterial(meta.id)).glsl ?? {};
+      expect(Object.keys(passes).length).toBeGreaterThan(0);
+      for (const pass of Object.values(passes)) expect(glsl).toContain(pass.trim());
+    });
+
+    it("carries the name, link and MIT notice in every output", async () => {
+      for (const result of generateAllExports({ meta, ...(await exportSource(meta)) })) {
+        expect(result.code).toContain(meta.name);
+        expect(result.code).toContain(`/shaders/${meta.id}`);
+        expect(result.code).toContain("MIT License");
+      }
+    });
+
+    it("bakes the current settings and both palettes into the code", async () => {
+      const source = await exportSource(meta);
+      const preset = meta.presets[meta.presets.length - 1];
+      if (!preset) throw new Error("shader has no presets");
+      const settings: Settings = { ...applyPreset(meta, preset.id), speed: 1.35 };
+      const react = generateExport({ meta, ...source, settings }, "react").code;
+      const vanilla = generateExport({ meta, ...source, settings }, "vanilla").code;
+      const colors = `[${settings.colors.map((hex) => `"${hex}"`).join(", ")}]`;
+      expect(react).toContain(
+        `const DARK_COLORS: [${settings.colors.map(() => "string").join(", ")}] = ${colors};`,
+      );
+      expect(vanilla).toContain(`const DARK_COLORS = ${colors};`);
+      expect(react).toContain("  speed = 1.35,");
+      expect(vanilla).toContain("  speed: 1.35,");
+      for (const control of meta.controls) {
+        expect(react).toContain(`  ${control.key} = ${String(settings[control.key])},`);
+      }
+      // Untouched colours keep the light palette for light themes.
+      const plain = generateExport({ meta, ...source }, "react").code;
+      if (meta.colors.light) {
+        expect(plain).toContain(meta.colors.light.map((hex) => `"${hex}"`).join(", "));
+      }
+    });
+
+    it("never lets untrusted settings into the generated code", async () => {
+      const source = await exportSource(meta);
+      const hostile = {
+        colors: ['"];alert(1);//', "#00ff00"],
+        speed: "1; fetch('https://evil.example')",
+        __proto__: { polluted: true },
+        "x</script><script>alert(1)</script>": 1,
+      };
+      for (const target of EXPORT_TARGETS) {
+        const code = generateExport({ meta, ...source, settings: hostile }, target).code;
+        expect(code).not.toContain("alert(1)");
+        expect(code).not.toContain("evil.example");
+        expect(code).not.toContain("</script>");
+        expect(code).not.toContain("polluted");
+      }
+    });
+
+    it("produces vanilla JavaScript that parses", async () => {
+      const { code } = generateExport({ meta, ...(await exportSource(meta)) }, "vanilla");
+      expect(() => new Function(code.replace(/^export \{ studio \};$/m, ""))).not.toThrow();
+    });
+  },
+);
 
 describe("generated React components", () => {
   it("type-check under strict TypeScript", async () => {
@@ -153,8 +271,7 @@ describe("generated React components", () => {
     mkdirSync(directory, { recursive: true });
     const files: string[] = [];
     for (const meta of shaders) {
-      const fragment = await loadFragment(meta.id);
-      const result = generateExport({ meta, fragment }, "react");
+      const result = generateExport({ meta, ...(await exportSource(meta)) }, "react");
       const file = resolve(directory, result.filename);
       writeFileSync(file, result.code);
       files.push(file);

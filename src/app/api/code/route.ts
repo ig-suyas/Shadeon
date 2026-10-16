@@ -6,8 +6,8 @@ import {
   type ExportTarget,
 } from "@/export/generate";
 import { installCommandFor } from "@/export/registry";
+import { exportSource } from "@/export/source";
 import { SITE_URL } from "@/lib/site";
-import { loadFragment } from "@/shaders/loaders";
 import { getShader } from "@/shaders/registry";
 import { resolveSettings } from "@/shaders/settings";
 import { isProduction } from "@/server/env";
@@ -78,7 +78,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!canAccess(shader, "free")) return fail(403, "plan-required");
 
   try {
-    const fragment = await loadFragment(shader.id);
+    const source = await exportSource(shader);
     const resolved = resolveSettings(
       shader,
       typeof settings === "object" && settings !== null && !Array.isArray(settings)
@@ -88,7 +88,7 @@ export async function POST(request: Request): Promise<Response> {
     const exports = Object.fromEntries(
       EXPORT_TARGETS.map((target) => [
         target,
-        generateExport({ meta: shader, fragment, settings: resolved }, target),
+        generateExport({ meta: shader, ...source, settings: resolved }, target),
       ]),
     ) as Record<ExportTarget, ExportResult>;
     const token = createInstallToken(shader.id, user.id);
