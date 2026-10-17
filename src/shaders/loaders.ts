@@ -9,6 +9,7 @@ import type { StudioMaterial } from "@/studio/core";
  * its source from an authenticated endpoint instead of a public chunk.
  */
 const loaders: Record<string, () => Promise<{ fragment: string }>> = {
+  "black-hole": () => import("./black-hole/fragment"),
   "fog-veil": () => import("./fog-veil/fragment"),
   "event-horizon": () => import("./event-horizon/fragment"),
   "ink-bloom": () => import("./ink-bloom/fragment"),

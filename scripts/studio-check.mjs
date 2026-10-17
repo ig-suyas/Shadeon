@@ -104,7 +104,7 @@ if (want("desktop")) {
   const { context, page } = await open();
   const renderer = await page.evaluate(() => {
     // The surface's own context: a throwaway canvas would be collected and lost mid-run.
-    const gl = document.querySelector("[data-engine=studio] canvas")?.getContext("webgl2");
+    const gl = document.querySelector("[data-shader] canvas")?.getContext("webgl2");
     const info = gl?.getExtension("WEBGL_debug_renderer_info");
     return gl ? gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) : "no webgl2";
   });
@@ -261,7 +261,7 @@ if (want("gpu")) {
     await page.mouse.move(w * 0.7, h * 0.45, { steps: 30 });
     await wait(page, 1500);
     const result = await page.evaluate(() => {
-      const c = document.querySelector("[data-engine=studio] canvas");
+      const c = document.querySelector("[data-shader] canvas");
       const rows = Object.entries(window.__gpu).map(([k, a]) => {
         a.sort((x, y) => x - y);
         return `${k}: median ${a[Math.floor(a.length / 2)].toFixed(2)} ms, p95 ${a[Math.floor(a.length * 0.95)].toFixed(2)} ms (n=${a.length})`;

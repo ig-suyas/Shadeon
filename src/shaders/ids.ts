@@ -2,6 +2,7 @@
 export const SHADER_IDS: readonly string[] = [
   "lodestone",
   "flint-glass",
+  "black-hole",
   "fog-veil",
   "event-horizon",
   "ink-bloom",

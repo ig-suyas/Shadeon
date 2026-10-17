@@ -9,6 +9,17 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "../src/shaders");
 
 /** id -> { name, written (ISO date), techniques[], chunks } */
 const NOTES = {
+  "black-hole": {
+    name: "Black Hole",
+    written: "2026-10-17",
+    techniques: [
+      "Per-pixel ray tracing around a Schwarzschild black hole: the photon orbit equation in Cartesian form (acceleration -1.5 h^2 x / r^5), integrated with distance-adaptive steps.",
+      "A thin accretion disk added at every crossing of the disk plane, front to back with opacity, which produces the lensed far side, the underside and the photon ring.",
+      "Disk texture from value-noise fbm in polar coordinates (seam-free through cosine and sine of the angle), slow differential rotation, a radial heat profile and a three-colour ramp.",
+      "A soft glow of gas near the disk accumulated along the ray, a filmic shoulder and dither.",
+    ],
+    chunks: "HEADER, HASH, NOISE, FBM, SEED, DITHER",
+  },
   "flint-glass": {
     name: "Flint Glass",
     written: "2026-10-16",

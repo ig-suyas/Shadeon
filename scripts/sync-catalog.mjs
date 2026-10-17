@@ -14,6 +14,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "../src/shaders");
 const DISPLAY_ORDER = [
   "lodestone",
   "flint-glass",
+  "black-hole",
   "fog-veil",
   "event-horizon",
   "ink-bloom",
